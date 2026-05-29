@@ -7,6 +7,10 @@ import { LoginPage } from '@/features/auth/components/LoginPage';
 import { DashboardHome } from '@/features/analytics/components/DashboardHome';
 import { ProjectListPage } from '@/features/projects/components/ProjectListPage';
 
+import { TeamListPage } from '@/features/teams/components/TeamListPage';
+import { SprintListPage } from './features/sprints/components/SprintListPage';
+import { TaskListPage } from '@/features/tasks/components/TaskListPage';
+
 function App() {
   return (
     <BrowserRouter>
@@ -21,9 +25,9 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardHome />} />
           <Route path="/projects" element={<ProjectListPage />} />
-          <Route path="/teams" element={
-            <div className="p-12 text-center text-muted-foreground">Teams Page (Coming Soon)</div>
-          } />
+          <Route path="/teams" element={<TeamListPage />} />
+          <Route path="/sprints" element={<SprintListPage />} />
+          <Route path="/tasks" element={<TaskListPage />} />
           
           <Route path="/settings" element={<SettingsLayout />}>
             <Route index element={<div className="p-12 text-center text-muted-foreground border border-dashed rounded-lg">General Settings</div>} />

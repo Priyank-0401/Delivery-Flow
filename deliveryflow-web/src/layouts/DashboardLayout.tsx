@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, FolderKanban, Users, Settings, Bell, Search } from "lucide-react";
+import { LayoutDashboard, FolderKanban, Users, Settings, Bell, Search, Timer, CheckSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -35,6 +35,14 @@ export function DashboardLayout() {
           <Link to="/teams" className={getLinkClass('/teams')}>
             <Users className="h-4 w-4" />
             Teams
+          </Link>
+          <Link to="/sprints" className={getLinkClass('/sprints')}>
+            <Timer className="h-4 w-4" />
+            Sprints
+          </Link>
+          <Link to="/tasks" className={getLinkClass('/tasks')}>
+            <CheckSquare className="h-4 w-4" />
+            Tasks
           </Link>
         </nav>
 
