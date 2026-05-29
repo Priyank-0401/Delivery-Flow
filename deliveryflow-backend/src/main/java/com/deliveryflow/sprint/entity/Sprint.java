@@ -1,35 +1,36 @@
-package com.deliveryflow.project.entity;
+package com.deliveryflow.sprint.entity;
 
-import com.deliveryflow.common.enums.ProjectStatus;
+import com.deliveryflow.common.enums.SprintStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "projects")
+@Table(name = "sprints")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Project {
+public class Sprint {
 
     @Id
     @UuidGenerator
     private String id;
 
+    private String projectId;
+
     private String name;
 
-    private String managerId;
+    private LocalDate startDate;
 
-    private Integer health = 100;
-
-    private String risk = "LOW";
+    private LocalDate endDate;
 
     @Enumerated(EnumType.STRING)
-    private ProjectStatus status = ProjectStatus.ACTIVE;
+    private SprintStatus status = SprintStatus.PLANNED;
 
     private LocalDateTime createdAt;
 

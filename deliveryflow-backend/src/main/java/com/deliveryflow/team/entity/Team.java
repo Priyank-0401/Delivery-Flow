@@ -1,6 +1,5 @@
-package com.deliveryflow.project.entity;
+package com.deliveryflow.team.entity;
 
-import com.deliveryflow.common.enums.ProjectStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,11 +9,11 @@ import org.hibernate.annotations.UuidGenerator;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "projects")
+@Table(name = "teams")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Project {
+public class Team {
 
     @Id
     @UuidGenerator
@@ -22,14 +21,11 @@ public class Project {
 
     private String name;
 
-    private String managerId;
+    private String description;
 
-    private Integer health = 100;
+    private String teamType = "SCRUM";
 
-    private String risk = "LOW";
-
-    @Enumerated(EnumType.STRING)
-    private ProjectStatus status = ProjectStatus.ACTIVE;
+    private Integer capacity = 0;
 
     private LocalDateTime createdAt;
 

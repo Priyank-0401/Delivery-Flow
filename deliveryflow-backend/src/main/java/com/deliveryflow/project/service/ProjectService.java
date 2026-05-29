@@ -1,30 +1,63 @@
 package com.deliveryflow.project.service;
 
+import com.deliveryflow.project.dto.CreateProjectRequest;
+import com.deliveryflow.project.dto.ProjectResponse;
 import com.deliveryflow.project.entity.Project;
+import com.deliveryflow.project.entity.ProjectTeam;
+import com.deliveryflow.project.mapper.ProjectMapper;
 import com.deliveryflow.project.repository.ProjectRepository;
+import com.deliveryflow.project.repository.ProjectTeamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
+    private final ProjectTeamRepository projectTeamRepository;
 
     @Autowired
-    public ProjectService(ProjectRepository projectRepository) {
+    public ProjectService(ProjectRepository projectRepository, ProjectTeamRepository projectTeamRepository) {
         this.projectRepository = projectRepository;
+        this.projectTeamRepository = projectTeamRepository;
     }
 
-    public List<Project> getAllProjects() {
-        return projectRepository.findAll();
+    public List<ProjectResponse> getAllProjects() {
+        return projectRepository.findAll()
+                .stream()
+                .map(ProjectMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
-    public Project createProject(Project project) {
+    public ProjectResponse getProjectById(String id) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Project not found: " + id));
+        return ProjectMapper.toResponse(project);
+    }
+
+    public ProjectResponse createProject(CreateProjectRequest request) {
+        Project project = ProjectMapper.toEntity(request);
         if (project.getManagerId() == null) {
             project.setManagerId("USR-1");
         }
-        return projectRepository.save(project);
+        return ProjectMapper.toResponse(projectRepository.save(project));
+    }
+
+    public ProjectTeam assignTeam(String projectId, String teamId) {
+        // Verify project exists
+        projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found: " + projectId));
+
+        ProjectTeam projectTeam = new ProjectTeam();
+        projectTeam.setProjectId(projectId);
+        projectTeam.setTeamId(teamId);
+        return projectTeamRepository.save(projectTeam);
+    }
+
+    public List<ProjectTeam> getProjectTeams(String projectId) {
+        return projectTeamRepository.findByProjectId(projectId);
     }
 }
