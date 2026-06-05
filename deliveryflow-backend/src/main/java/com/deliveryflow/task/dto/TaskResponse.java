@@ -15,6 +15,8 @@ public class TaskResponse {
     private String projectId;
     private String sprintId;
     private String assigneeId;
+    private String reporterId;
+    private String taskKey;
     private String title;
     private String description;
     private TaskStatus status;

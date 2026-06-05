@@ -6,6 +6,8 @@ export interface TaskResponse {
   projectId: string;
   sprintId: string;
   assigneeId: string | null;
+  reporterId: string | null;
+  taskKey: string;
   title: string;
   description: string;
   status: string;

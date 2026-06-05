@@ -30,6 +30,10 @@ public class Task {
 
     private String assigneeId;
 
+    private String reporterId;
+
+    private String taskKey;
+
     private String title;
 
     private String description;

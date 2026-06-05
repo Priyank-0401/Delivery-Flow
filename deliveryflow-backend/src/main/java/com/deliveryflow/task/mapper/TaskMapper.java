@@ -17,6 +17,8 @@ public class TaskMapper {
         response.setProjectId(task.getProjectId());
         response.setSprintId(task.getSprintId());
         response.setAssigneeId(task.getAssigneeId());
+        response.setReporterId(task.getReporterId());
+        response.setTaskKey(task.getTaskKey());
         response.setTitle(task.getTitle());
         response.setDescription(task.getDescription());
         response.setStatus(task.getStatus());

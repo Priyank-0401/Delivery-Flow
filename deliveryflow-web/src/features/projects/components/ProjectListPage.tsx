@@ -18,8 +18,20 @@ export function ProjectListPage() {
   });
 
   const columnDefs: ColDef<ProjectResponse>[] = useMemo(() => [
+    { 
+      field: 'projectCode', 
+      headerName: 'Code', 
+      width: 110,
+      cellRenderer: (params: { value: string }) => {
+        return (
+          <span className="font-mono bg-zinc-900 border border-zinc-800 text-zinc-300 px-2 py-0.5 rounded text-xs">
+            {params.value || 'N/A'}
+          </span>
+        );
+      }
+    },
     { field: 'name', headerName: 'Project Name', flex: 1 },
-    { field: 'managerId', headerName: 'Manager', width: 200 },
+    { field: 'managerId', headerName: 'Manager', width: 180 },
     { field: 'status', headerName: 'Status', width: 130 },
     { 
       field: 'health', 

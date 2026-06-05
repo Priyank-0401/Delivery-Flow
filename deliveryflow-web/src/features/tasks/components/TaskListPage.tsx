@@ -18,7 +18,18 @@ export function TaskListPage() {
   });
 
   const columnDefs: ColDef<TaskResponse>[] = useMemo(() => [
-    { field: 'id', headerName: 'ID', width: 150 },
+    { 
+      field: 'taskKey', 
+      headerName: 'Key', 
+      width: 120,
+      cellRenderer: (params: { value: string }) => {
+        return (
+          <span className="font-mono bg-zinc-900 border border-zinc-800 text-zinc-300 px-2 py-0.5 rounded text-xs font-semibold">
+            {params.value || 'N/A'}
+          </span>
+        );
+      }
+    },
     { field: 'title', headerName: 'Title', flex: 1 },
     { field: 'sprintId', headerName: 'Sprint ID', width: 150 },
     { field: 'status', headerName: 'Status', width: 150 },

@@ -120,12 +120,16 @@ public class DemoDataSeeder {
                 "API Gateway Overhaul", "ML Pipeline", "Security Hardening",
                 "Performance Optimization", "Customer Portal", "Admin Dashboard",
                 "Notification Service", "Search Engine", "Analytics Platform"};
-        ProjectStatus[] projectStatuses = {ProjectStatus.ACTIVE, ProjectStatus.ACTIVE, ProjectStatus.PLANNED,
-                ProjectStatus.ON_HOLD, ProjectStatus.COMPLETED};
+        String[] projectCodes = {"PHX", "APL", "PAY", "MOB", "DAT", "CLD", "API", "MLP", "SEC", "PRF", "CUS", "ADM", "NOT", "SRC", "ANL"};
+        ProjectStatus[] projectStatuses = {ProjectStatus.ACTIVE, ProjectStatus.ACTIVE, ProjectStatus.PLANNING,
+                ProjectStatus.AT_RISK, ProjectStatus.BLOCKED, ProjectStatus.CANCELLED, ProjectStatus.COMPLETED};
 
         for (int i = 0; i < numProjects; i++) {
             Project p = new Project();
-            p.setName(projectNames[i % projectNames.length]);
+            p.setName(projectNames[i 
+                % projectNames.length]);
+            p.setProjectCode(projectCodes[i % projectCodes.length]);
+            p.setTaskSequence(0);
             p.setManagerId(users.get(random.nextInt(users.size())).getId());
             p.setStatus(projectStatuses[random.nextInt(projectStatuses.length)]);
             p.setHealth(40 + random.nextInt(61)); // 40-100
@@ -154,11 +158,17 @@ public class DemoDataSeeder {
         // 6. Seed Sprints
         List<Sprint> sprints = new ArrayList<>();
         SprintStatus[] sprintStatuses = {SprintStatus.PLANNED, SprintStatus.ACTIVE, SprintStatus.COMPLETED};
+        Map<String, Integer> sprintCounts = new HashMap<>();
 
         for (int i = 1; i <= numSprints; i++) {
+            Project p = projects.get(random.nextInt(projects.size()));
+            int sprintNum = sprintCounts.getOrDefault(p.getId(), 0) + 1;
+            sprintCounts.put(p.getId(), sprintNum);
+
             Sprint s = new Sprint();
-            s.setProjectId(projects.get(random.nextInt(projects.size())).getId());
-            s.setName("Sprint " + i);
+            s.setProjectId(p.getId());
+            s.setSprintCode(p.getProjectCode() + "-S" + sprintNum);
+            s.setName("Sprint " + sprintNum);
             s.setStatus(sprintStatuses[random.nextInt(sprintStatuses.length)]);
             s.setStartDate(LocalDate.now().minusDays(28).plusDays(random.nextInt(56)));
             s.setEndDate(s.getStartDate().plusDays(14));
@@ -183,25 +193,40 @@ public class DemoDataSeeder {
                 "auth middleware", "error handling", "notification service", "search feature", "dashboard widget",
                 "export module", "file upload", "user profile", "payment integration", "email template"};
 
+        Map<String, Integer> taskCounts = new HashMap<>();
+        
         for (int i = 1; i <= numTasks; i++) {
             Sprint sprint = sprints.get(random.nextInt(sprints.size()));
+            Project project = projects.stream().filter(p -> p.getId().equals(sprint.getProjectId())).findFirst().orElse(projects.get(0));
+            int taskSeq = taskCounts.getOrDefault(project.getId(), 0) + 1;
+            taskCounts.put(project.getId(), taskSeq);
 
             Task t = new Task();
             t.setProjectId(sprint.getProjectId());
             t.setSprintId(sprint.getId());
+            t.setTaskKey(project.getProjectCode() + "-" + taskSeq);
             t.setTitle(taskPrefixes[random.nextInt(taskPrefixes.length)] + " " + taskSuffixes[random.nextInt(taskSuffixes.length)]);
-            t.setDescription("Task description for item #" + i);
+            t.setDescription("Task description for item #" + taskSeq);
             t.setStatus(weightedStatuses[random.nextInt(weightedStatuses.length)]);
             t.setPriority(taskPriorities[random.nextInt(taskPriorities.length)]);
             t.setStoryPoints(new int[]{1, 2, 3, 5, 8, 13}[random.nextInt(6)]);
             t.setDueDate(LocalDate.now().plusDays(random.nextInt(30) - 10)); // Some overdue
 
-            // 70% of tasks have an assignee
+            // 70% of tasks have an assignee, 30% have a reporter
             if (random.nextInt(10) < 7) {
                 t.setAssigneeId(users.get(random.nextInt(users.size())).getId());
             }
+            if (random.nextInt(10) < 3) {
+                t.setReporterId(users.get(random.nextInt(users.size())).getId());
+            }
 
             taskRepository.save(t);
+        }
+        
+        // Update project task sequences
+        for (Project p : projects) {
+            p.setTaskSequence(taskCounts.getOrDefault(p.getId(), 0));
+            projectRepository.save(p);
         }
         log.info("  ✓ {} tasks created", numTasks);
 

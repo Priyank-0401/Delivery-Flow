@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 public class ProjectResponse {
     private String id;
     private String name;
+    private String projectCode;
     private String managerId;
     private Integer health;
     private String risk;

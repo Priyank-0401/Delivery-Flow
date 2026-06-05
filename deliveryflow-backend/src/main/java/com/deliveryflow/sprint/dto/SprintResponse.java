@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 public class SprintResponse {
     private String id;
     private String projectId;
+    private String sprintCode;
     private String name;
     private LocalDate startDate;
     private LocalDate endDate;

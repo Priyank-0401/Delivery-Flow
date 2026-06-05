@@ -12,6 +12,7 @@ public class SprintMapper {
         SprintResponse response = new SprintResponse();
         response.setId(sprint.getId());
         response.setProjectId(sprint.getProjectId());
+        response.setSprintCode(sprint.getSprintCode());
         response.setName(sprint.getName());
         response.setStartDate(sprint.getStartDate());
         response.setEndDate(sprint.getEndDate());

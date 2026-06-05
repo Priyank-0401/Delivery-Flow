@@ -3,6 +3,7 @@ import { apiClient } from './apiClient';
 export interface SprintResponse {
   id: string;
   projectId: string;
+  sprintCode: string;
   name: string;
   startDate: string;
   endDate: string;

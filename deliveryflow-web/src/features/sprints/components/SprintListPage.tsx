@@ -18,7 +18,18 @@ export function SprintListPage() {
   });
 
   const columnDefs: ColDef<SprintResponse>[] = useMemo(() => [
-    { field: 'id', headerName: 'ID', width: 200 },
+    { 
+      field: 'sprintCode', 
+      headerName: 'Code', 
+      width: 140,
+      cellRenderer: (params: { value: string }) => {
+        return (
+          <span className="font-mono bg-zinc-900 border border-zinc-800 text-zinc-300 px-2 py-0.5 rounded text-xs font-semibold">
+            {params.value || 'N/A'}
+          </span>
+        );
+      }
+    },
     { field: 'name', headerName: 'Sprint Name', flex: 1 },
     { field: 'projectId', headerName: 'Project ID', width: 200 },
     { field: 'status', headerName: 'Status', width: 150 },

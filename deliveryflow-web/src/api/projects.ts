@@ -4,6 +4,7 @@ import { apiClient } from './apiClient';
 export interface ProjectResponse {
   id: string;
   name: string;
+  projectCode: string;
   managerId: string;
   health: number;
   risk: string;

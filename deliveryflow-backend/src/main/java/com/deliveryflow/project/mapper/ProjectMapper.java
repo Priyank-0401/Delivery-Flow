@@ -10,6 +10,7 @@ public class ProjectMapper {
         ProjectResponse response = new ProjectResponse();
         response.setId(project.getId());
         response.setName(project.getName());
+        response.setProjectCode(project.getProjectCode());
         response.setManagerId(project.getManagerId());
         response.setHealth(project.getHealth());
         response.setRisk(project.getRisk());

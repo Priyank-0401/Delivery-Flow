@@ -22,6 +22,10 @@ public class Project {
 
     private String name;
 
+    private String projectCode;
+
+    private Integer taskSequence = 0;
+
     private String managerId;
 
     private Integer health = 100;

@@ -23,6 +23,8 @@ public class Sprint {
 
     private String projectId;
 
+    private String sprintCode;
+
     private String name;
 
     private LocalDate startDate;

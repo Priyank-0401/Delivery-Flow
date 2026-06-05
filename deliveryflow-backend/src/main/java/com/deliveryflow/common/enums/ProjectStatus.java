@@ -1,9 +1,11 @@
 package com.deliveryflow.common.enums;
 
 public enum ProjectStatus {
-    PLANNED,
+    PLANNING,
     ACTIVE,
-    ON_HOLD,
+    AT_RISK,
+    BLOCKED,
     COMPLETED,
     CANCELLED
 }
+
