@@ -177,7 +177,6 @@ public class DemoDataSeeder {
         log.info("  ✓ {} sprints created", numSprints);
 
         // 7. Seed Tasks
-        TaskStatus[] taskStatuses = {TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.IN_REVIEW, TaskStatus.DONE, TaskStatus.BLOCKED};
         TaskPriority[] taskPriorities = {TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH, TaskPriority.CRITICAL};
         // Weight distribution: 20% TODO, 25% IN_PROGRESS, 15% IN_REVIEW, 30% DONE, 10% BLOCKED
         TaskStatus[] weightedStatuses = {

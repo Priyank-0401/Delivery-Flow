@@ -57,6 +57,7 @@ export default {
         success: "#10b981", // Emerald 500
         warning: "#f59e0b", // Amber 500
         critical: "#ef4444", // Red 500
+        external: "#8b5cf6", // Purple 500
       },
       borderRadius: {
         lg: "var(--radius)",

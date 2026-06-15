@@ -4,35 +4,52 @@
  
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    --background: 220 30% 6%; /* #0B0E14 */
+    --foreground: 210 20% 98%;
 
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+    --card: 222 25% 10%; /* #131720 */
+    --card-foreground: 210 20% 98%;
  
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 222 25% 10%;
+    --popover-foreground: 210 20% 98%;
  
-    --primary: 226 71% 65%; /* Indigo 500 equivalent */
-    --primary-foreground: 0 0% 98%;
+    --primary: 252 87% 67%; /* Purple/Indigo accent */
+    --primary-foreground: 210 20% 98%;
  
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 220 20% 16%;
+    --secondary-foreground: 210 20% 98%;
  
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 220 20% 16%;
+    --muted-foreground: 215 16% 65%; /* Muted text */
  
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 220 20% 16%;
+    --accent-foreground: 210 20% 98%;
  
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%; /* #ef4444 */
+    --destructive-foreground: 210 20% 98%;
  
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 220 20% 16%;
+    --input: 220 20% 16%;
+    --ring: 252 87% 67%;
  
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+  }
+}
+ 
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted));
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
   }
 }
  

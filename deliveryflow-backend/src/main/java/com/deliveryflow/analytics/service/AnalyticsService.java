@@ -9,7 +9,6 @@ import com.deliveryflow.analytics.repository.ProjectMetricsRepository;
 import com.deliveryflow.common.enums.SprintStatus;
 import com.deliveryflow.common.enums.TaskStatus;
 import com.deliveryflow.project.repository.ProjectRepository;
-import com.deliveryflow.sprint.entity.Sprint;
 import com.deliveryflow.sprint.repository.SprintRepository;
 import com.deliveryflow.task.entity.Task;
 import com.deliveryflow.task.repository.TaskRepository;
@@ -136,13 +135,11 @@ public class AnalyticsService {
 
     public SprintMetricsDTO getSprintMetrics(String sprintId) {
         List<Task> sprintTasks = taskRepository.findBySprintId(sprintId);
-        int totalPoints = 0;
         int completedPoints = 0;
         int remainingPoints = 0;
 
         for (Task t : sprintTasks) {
             int pts = t.getStoryPoints() != null ? t.getStoryPoints() : 0;
-            totalPoints += pts;
             if (t.getStatus() == TaskStatus.DONE) {
                 completedPoints += pts;
             } else {
