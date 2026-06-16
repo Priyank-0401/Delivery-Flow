@@ -7,6 +7,6 @@ public enum ProjectStatus {
     AT_RISK,
     BLOCKED,
     COMPLETED,
-    CANCELLED
+    CANCELLED,
+    ON_HOLD
 }
-

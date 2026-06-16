@@ -42,8 +42,6 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
             message = "Token has expired";
         } else if (invalid != null) {
             message = "Invalid token";
-        } else if (authException != null && authException.getMessage() != null) {
-            message = authException.getMessage();
         }
 
         ApiErrorResponse apiErrorResponse = new ApiErrorResponse(
