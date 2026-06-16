@@ -1,5 +1,6 @@
 package com.deliveryflow.project.service;
 
+import com.deliveryflow.common.exception.ResourceNotFoundException;
 import com.deliveryflow.project.dto.CreateProjectRequest;
 import com.deliveryflow.project.dto.ProjectResponse;
 import com.deliveryflow.project.entity.Project;
@@ -34,7 +35,7 @@ public class ProjectService {
 
     public ProjectResponse getProjectById(String id) {
         Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Project not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Project", id));
         return ProjectMapper.toResponse(project);
     }
 
@@ -49,7 +50,7 @@ public class ProjectService {
     public ProjectTeam assignTeam(String projectId, String teamId) {
         // Verify project exists
         projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project not found: " + projectId));
+                .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
 
         ProjectTeam projectTeam = new ProjectTeam();
         projectTeam.setProjectId(projectId);

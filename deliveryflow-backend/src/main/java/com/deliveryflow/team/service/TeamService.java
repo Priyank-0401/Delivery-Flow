@@ -1,6 +1,7 @@
 package com.deliveryflow.team.service;
 
 import com.deliveryflow.common.enums.TeamMemberRole;
+import com.deliveryflow.common.exception.ResourceNotFoundException;
 import com.deliveryflow.team.dto.AddMemberRequest;
 import com.deliveryflow.team.dto.CreateTeamRequest;
 import com.deliveryflow.team.dto.TeamResponse;
@@ -37,7 +38,7 @@ public class TeamService {
 
     public TeamResponse getTeamById(String id) {
         Team team = teamRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Team not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Team", id));
         return TeamMapper.toResponse(team);
     }
 
@@ -49,7 +50,7 @@ public class TeamService {
     public TeamMember addMember(String teamId, AddMemberRequest request) {
         // Verify team exists
         teamRepository.findById(teamId)
-                .orElseThrow(() -> new RuntimeException("Team not found: " + teamId));
+                .orElseThrow(() -> new ResourceNotFoundException("Team", teamId));
 
         TeamMember member = new TeamMember();
         member.setTeamId(teamId);

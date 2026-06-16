@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +40,7 @@ public class DemoDataSeeder {
     private final SprintRepository sprintRepository;
     private final TaskRepository taskRepository;
     private final Environment env;
+    private final PasswordEncoder passwordEncoder;
 
     private final Random random = new Random(42); // Fixed seed for reproducibility
 
@@ -67,17 +69,23 @@ public class DemoDataSeeder {
         // 1. Seed Users
         List<User> users = new ArrayList<>();
         // Keep the existing USR-1 user
-        userRepository.findById("USR-1").ifPresent(users::add);
+        userRepository.findById("USR-1").ifPresent(u -> {
+            u.setPasswordHash(passwordEncoder.encode("Demo@12345678"));
+            u.setRole(UserRole.ADMIN);
+            users.add(userRepository.save(u));
+        });
 
         String[] firstNames = {"Aisha", "Ravi", "Elena", "James", "Priya", "Chen", "Sofia", "Marcus",
                 "Nina", "Omar", "Lena", "Kai", "Mia", "Dev", "Sara", "Alex", "Jordan", "Zara", "Leo", "Ava"};
-        String[] roles = {"DEVELOPER", "DEVELOPER", "DEVELOPER", "DEVELOPER", "MANAGER"};
+        UserRole[] roles = {UserRole.MEMBER, UserRole.MEMBER, UserRole.MEMBER, UserRole.MEMBER, UserRole.MANAGER};
 
         for (int i = 0; i < numUsers; i++) {
             User u = new User();
             u.setName(firstNames[i % firstNames.length] + " " + (char)('A' + i));
             u.setEmail(firstNames[i % firstNames.length].toLowerCase() + (i + 1) + "@deliveryflow.io");
+            u.setPasswordHash(passwordEncoder.encode("Demo@12345678"));
             u.setRole(roles[i % roles.length]);
+            u.setActive(true);
             users.add(userRepository.save(u));
         }
         log.info("  ✓ {} users created", numUsers);
@@ -108,7 +116,7 @@ public class DemoDataSeeder {
             TeamMember tm = new TeamMember();
             tm.setTeamId(t.getId());
             tm.setUserId(u.getId());
-            tm.setRole(u.getRole().equals("MANAGER") ? TeamMemberRole.LEAD : TeamMemberRole.MEMBER);
+            tm.setRole(u.getRole() == UserRole.MANAGER ? TeamMemberRole.LEAD : TeamMemberRole.MEMBER);
             teamMemberRepository.save(tm);
         }
         log.info("  ✓ Team members assigned");
@@ -177,7 +185,6 @@ public class DemoDataSeeder {
         log.info("  ✓ {} sprints created", numSprints);
 
         // 7. Seed Tasks
-        TaskStatus[] taskStatuses = {TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.IN_REVIEW, TaskStatus.DONE, TaskStatus.BLOCKED};
         TaskPriority[] taskPriorities = {TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH, TaskPriority.CRITICAL};
         // Weight distribution: 20% TODO, 25% IN_PROGRESS, 15% IN_REVIEW, 30% DONE, 10% BLOCKED
         TaskStatus[] weightedStatuses = {

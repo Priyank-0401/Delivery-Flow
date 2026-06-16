@@ -5,13 +5,14 @@ import com.deliveryflow.task.dto.TaskResponse;
 import com.deliveryflow.task.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/tasks")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/v1/tasks")
 public class TaskController {
 
     private final TaskService taskService;
@@ -40,7 +41,8 @@ public class TaskController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TaskResponse createTask(@RequestBody CreateTaskRequest request) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'PMO', 'MANAGER', 'MEMBER')")
+    public TaskResponse createTask(@Valid @RequestBody CreateTaskRequest request) {
         return taskService.createTask(request);
     }
 }
