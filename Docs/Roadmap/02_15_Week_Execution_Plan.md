@@ -3,111 +3,82 @@
 **Document ID:** DF-RDM-02  
 **Target Audience:** Engineering (Solo Developer)
 
-This document breaks down the 15-week roadmap into a strict weekly cadence.
+This document breaks down the 15-week roadmap into a strict weekly cadence, restructured to prioritize flagship dependency modeling, early CI/CD, project health metrics, production deployment, and observability before integrating AI features.
 
 ---
 
-### Week 1: Foundation & Architecture
-- **Goals:** Finalize all blueprints before writing application code.
-- **Backend:** Initialize Spring Boot repository (Java 21, Gradle). Add Spring Web, Data JPA, Security dependencies.
-- **Frontend:** Initialize Vite + React + TS project. Install Tailwind and Shadcn/UI.
-- **Database:** Spin up local Postgres container via Docker Compose.
-- **DevOps:** Setup `.gitignore` and initial GitHub repo.
-- **Deliverables:** Completed SRS, Architecture Docs, initialized repos.
-- **Definition of Done (DoD):** Both Frontend and Backend compile and run locally.
+### Week 1: Foundation & Architecture (Completed)
+- **Goals:** Establish repository layouts and initial docker environments.
+- **DoD:** Backend and frontend repositories initialized and compile cleanly.
 
-### Week 2: Auth & Users (Phase 1)
-- **Goals:** Secure the application.
-- **Backend:** Implement JWT filter chain. Create `/auth/login` and `/users/me` endpoints.
-- **Frontend:** Build Login Screen. Setup React Context for user state. Protect internal routes.
-- **Database:** Create `users` table.
-- **Deliverables:** Working authentication flow.
-- **DoD:** A user can log in and view a protected blank dashboard.
+### Week 2: Auth & Security Infrastructure (Completed)
+- **Goals:** Secure backend filter chain, implement JWT properties, and define user role mappings.
+- **DoD:** Login and Register REST APIs active with BCrypt hashing and custom tokens.
 
-### Week 3: Projects & Teams (Phase 1)
-- **Goals:** Establish the core hierarchical domain.
-- **Backend:** Implement CRUD for `portfolios`, `programs`, `projects`, and `teams`.
-- **Frontend:** Build Project List View and Team Management UI.
-- **Database:** Create corresponding relational tables.
-- **Deliverables:** Project management module.
-- **DoD:** A user can create a project and assign a team to it.
+### Week 3: Core API Security & Method-Level RBAC (Completed)
+- **Goals:** Secure existing routes using JWT checks and enforce strict role checking (`ADMIN > PMO > MANAGER > MEMBER`).
+- **DoD:** Accessing any operational API route without a valid bearer token throws 401.
 
-### Week 4: Tasks & Sprints (Phase 1)
-- **Goals:** Establish the granular units of work.
-- **Backend:** Implement Task and Sprint entities. Build APIs to assign tasks to sprints.
-- **Frontend:** Build a basic Kanban board or Task List UI.
-- **Database:** Create `tasks` and `sprints` tables.
-- **Testing:** Unit tests for Task assignment logic.
-- **DoD:** Tasks can be created, edited, and moved between 'To Do' and 'Done'.
+### Week 4: Request Validation, Exceptions & CI Setup (Completed)
+- **Goals:** Bind input bodies to validation checks, structure standardized API responses, and implement GitHub Actions CI workflow (build, test, lint).
+- **DoD:** Bad request structures throw 400, and CI automatically checks code changes.
 
-### Week 5: Neo4j Integration (Phase 2)
-- **Goals:** Introduce the Graph database.
-- **Backend:** Add `spring-data-neo4j`. Create NodeEntity mappings for `TaskNode`.
-- **Database:** Add Neo4j to local Docker Compose.
-- **DevOps:** Configure application properties to connect to dual databases.
-- **Risks:** Distributed transaction failures between Postgres and Neo4j.
-- **DoD:** Creating a task in Postgres automatically creates a node in Neo4j.
+### Week 5: Neo4j Integration & Node Mapping (Phase 2)
+- **Goals:** Integrate Graph database and sync relational database writes.
+- **Backend:** Connect Neo4j DB container; map task/milestone nodes via `spring-data-neo4j`.
+- **Sync:** Implement Postgres-to-Neo4j transactional event listeners.
+- **DoD:** Postgres task edits reflect instantly in the Neo4j graph nodes.
 
-### Week 6: Graph Edges & Modeling (Phase 2)
-- **Goals:** Connect the nodes.
-- **Backend:** Build API to create `BLOCKS` and `RELATES_TO` relationships.
-- **Frontend:** Build a simple form to say "Task A blocks Task B".
-- **Database:** Write Cypher queries to validate edges.
-- **DoD:** Edges can be successfully persisted in Neo4j.
+### Week 6: Graph Relationship & Dependency Algorithms (Phase 2)
+- **Goals:** Implement topological sort and dependency checking.
+- **Backend:** Code graph cycle detection validation and Slack calculations.
+- **APIs:** Expose `/tasks/{id}/critical-path` and relationship mapping controls.
+- **DoD:** Cycle detection prevents circular dependencies and returns zero-slack critical paths.
 
-### Week 7: Critical Path Algorithm (Phase 2)
-- **Goals:** The brain of the flagship feature.
-- **Backend:** Implement topological sort and Slack calculation using Cypher and Java logic.
-- **Testing:** Heavy unit testing of the DAG traversal with mocked data.
-- **Risks:** Infinite loops from undetected cyclic dependencies.
-- **DoD:** API successfully returns the critical path for a given milestone.
+### Week 7: React Flow Dependency Graph UI (Phase 3)
+- **Goals:** Create a visual, interactive graph dashboard.
+- **Frontend:** Install `reactflow`, map fetched node lists to canvas.
+- **UI:** Highlight critical path sequence red and show details in a sidebar on click.
+- **DoD:** Fully interactive task node graph panel with zoom/pan functionality is active in browser.
 
-### Week 8: React Flow UI (Phase 2)
-- **Goals:** Visualize the graph.
-- **Frontend:** Install `reactflow`. Fetch graph data from backend and map to nodes/edges on canvas.
-- **UI:** Color the critical path edges red based on API response.
-- **DoD:** Interactive, drag-and-drop graph is visible in the browser.
+### Week 8: Project Health Metric Snapshotting (Phase 4)
+- **Goals:** Collect snapshot records for analytics.
+- **Backend:** Configure cron runners to capture daily utilization, velocity, and backlog metrics.
+- **Database:** Create the `health_metrics` snapshot audit tables.
+- **DoD:** Snapshot jobs log database statistics and save historical trend data daily.
 
-### Week 9: Analytics Aggregation (Phase 3)
-- **Goals:** Start calculating metrics.
-- **Backend:** Build scheduled jobs (cron) to calculate Velocity and Scope Creep per sprint.
-- **Database:** Create `health_metrics` time-series table.
-- **DoD:** Backend successfully aggregates and saves daily metric snapshots.
+### Week 9: Health Score Dials & Visualizations (Phase 4)
+- **Goals:** Implement the 8-dimension health calculator.
+- **Backend:** Code weighted composite aggregation rules mapping 0-100 scores.
+- **Frontend:** Embed speedometer dial gauges and 8-dimension radar/spider charts.
+- **DoD:** Project details page displays color-coded health stats powered by real metrics.
 
-### Week 10: Health Score Engine (Phase 3)
-- **Goals:** Implement the 8-dimension mathematical formula.
-- **Backend:** Code the `HealthScoreCalculator` service. Weight the variables.
-- **Frontend:** Build the dial gauge component for the dashboard.
-- **Testing:** Validate score outputs against known mocked data sets.
-- **DoD:** Dashboard displays an accurate 0-100 score.
+### Week 10: Production DevOps & Deployment (Phase 5)
+- **Goals:** Deploy the application to AWS under a public URL.
+- **DevOps:** Setup production docker-compose profiles. Provision EC2 host. Config Nginx reverse proxy with SSL certificate.
+- **DoD:** App is fully accessible via public domain HTTPS URL.
 
-### Week 11: Workload Analytics (Phase 3)
-- **Goals:** Solve the developer burnout problem.
-- **Backend:** Calculate assigned hours vs capacity.
-- **Frontend:** Build the Heatmap UI for the Team page.
-- **DoD:** UI highlights overloaded developers in red.
+### Week 11: Production Observability (Phase 5.5)
+- **Goals:** Establish deep system visibility for monitoring and diagnostics.
+- **Backend:** Configure Spring Boot Actuator, Micrometer endpoints, and structured JSON request logging.
+- **DoD:** Metrics collection, error tracking, and health checks are visible in production.
 
-### Week 12: Gemini API Integration (Phase 4)
-- **Goals:** Introduce AI.
-- **Backend:** Register for Gemini API key. Add LangChain4j or raw HTTP client to Spring Boot.
-- **Frontend:** Add a "Summarize Project" button.
-- **Risks:** API latency causing HTTP timeouts.
-- **DoD:** Backend can successfully send a hardcoded prompt and return a response.
+### Week 12: Gemini AI Insights Engine (Phase 6)
+- **Goals:** Add context-grounded AI risk summaries.
+- **Backend:** Integrate Gemini API and construct prompt templates embedding project metrics and dependency graph JSON.
+- **DoD:** Clicking "Explain Risks" generates plain English analysis with database source citations.
 
-### Week 13: RAG & Ask DeliveryFlow (Phase 4)
-- **Goals:** Make the AI contextual.
-- **Backend:** Construct the JSON prompt injection containing Project Health and Graph data. Implement LangGraph logic.
-- **Frontend:** Build the chat interface side-drawer.
-- **DoD:** The AI answers questions accurately based *only* on the current project's data.
+### Week 13: Sprint Intelligence & Capacity Heatmaps (Phase 7)
+- **Goals:** Implement workload planning widgets.
+- **Frontend:** Add burndown charts and developer capacity heatmaps.
+- **DoD:** Managers can drag tasks to balance workloads and avoid developer overload.
 
-### Week 14: Deployment (Phase 5)
-- **Goals:** Ship to production.
-- **DevOps:** Provision AWS EC2 (Ubuntu). Install Docker. Write production `docker-compose.yml`. Configure Nginx as a reverse proxy. Map domain name via Route53.
-- **Risks:** CORS errors, Database connection failures in prod.
-- **DoD:** Application is accessible via `https://deliveryflow.io`.
+### Week 14: External Integration Webhooks (Phase 8)
+- **Goals:** Feed real-time project updates from Jira or GitHub.
+- **Backend:** Build webhook ingestion routes with signature validation.
+- **DoD:** External task edits update Postgres and Neo4j nodes within 2 seconds.
 
-### Week 15: Polish & Portfolio (Phase 6)
-- **Goals:** Prepare for recruiters.
-- **Backend:** Write a `DemoDataSeeder` script to populate realistic, 6-month historical data into the databases.
-- **DevOps:** Polish the GitHub README with architecture diagrams and setup instructions.
-- **DoD:** The project looks like a thriving, active enterprise platform upon first login.
+### Week 15: Reporting, Enterprise Hierarchy & Polish (Phase 9 & 10)
+- **Goals:** Automate PDF reports, implement program hierarchy CRUD, and seed demo records.
+- **Backend:** PDF report generation cron, Portfolios & Programs CRUD API, and rich seeder data script.
+- **DoD:** Recipient receives scheduled PDF health logs, and the repository displays 6 months of historical metrics upon first login.

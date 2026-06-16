@@ -372,258 +372,146 @@ As specified, the UI is **nowhere near production quality**. Here's a structured
 ## 6. Revised Industry-Grade Roadmap
 
 > [!IMPORTANT]
-> The original 15-week roadmap significantly underestimates the scope for an industry-grade application. The revised roadmap below restructures development into proper engineering milestones with quality gates.
+> The roadmap has been restructured to prioritize high-value flagship features (Neo4j, ReactFlow, Health Engine, and Cloud Deployment) immediately after securing the core platform, deferring enterprise CRUD hierarchies (Portfolios/Programs) to later sprints.
 
-### Milestone 1: Core Foundation & Security (Priority: P0)
+### Milestone 1: Core Foundation & Security (Priority: P0) — [COMPLETED]
 **Objective:** Establish a secure, well-architected foundation that every subsequent feature depends on.
 
-#### Phase 1.1 — Authentication & Security Infrastructure
-- Spring Security configuration with JWT filter chain
-- Login/Register/Password-reset API endpoints
-- JWT token generation (access + refresh tokens)
-- Role-based access control (ADMIN, PMO, MANAGER, MEMBER)
-- Protected API routes with role enforcement
-- CORS configuration (specific origins, not wildcard)
-- API versioning (`/api/v1/` prefix)
-- Global exception handler with standardized error responses
-- Input validation with Bean Validation (`@Valid`)
-
-#### Phase 1.2 — Database Architecture Hardening
-- Add `tenant_id` to all tables (multi-tenancy foundation)
-- Add soft deletes (`deleted_at`) across all entities
-- Add audit columns (`created_by`, `updated_by`)
-- Create missing SRS tables: `portfolios`, `programs`, `dependencies`, `health_metrics`, `risks`, `reports`, `notifications`, `integrations`, `audit_logs`
-- Add proper indexes for query performance
-- Implement optimistic locking (`@Version`)
-
-#### Phase 1.3 — Backend Quality Infrastructure
-- Global exception handler (`@ControllerAdvice`)
-- Structured JSON logging (Logback)
-- Spring Actuator health/readiness/liveness probes
-- Unit test infrastructure (JUnit 5 + Mockito)
-- Integration test infrastructure (Testcontainers)
-- API documentation with SpringDoc OpenAPI
-
-**Exit Criteria:** A user can register, log in (JWT), access role-protected endpoints, and the database schema matches the SRS.
+* **Phase 1.1 — Authentication & Security Infrastructure** [DONE]
+  - Spring Security configuration with JWT filter chain
+  - Login/Register/Logout/Refresh API endpoints
+  - JWT token generation (access + refresh tokens)
+  - Role-based access control (ADMIN, PMO, MANAGER, MEMBER)
+  - Protected API routes with role enforcement
+  - CORS configuration (specific origins, not wildcard)
+  - Global exception handler with standardized error responses
+  - Input validation with Bean Validation (`@Valid`)
+* **Phase 1.2 — Database Architecture Hardening** [DONE]
+  - Add soft deletes (`deleted_at`), `is_active` fields to users
+  - Create tables for `refresh_tokens` and `audit_logs`
+  - Normalize legacy database roles via migration scripts
+* **Phase 1.3 — Backend Quality & CI Infrastructure** [DONE]
+  - Global REST exception advisor (`@RestControllerAdvice`)
+  - Integration of OpenAPI JWT Bearer security scheme
+  - 35 unit/integration tests covering security, exception handling, and RBAC
+  - Configure GitHub Actions CI workflow (build, test, lint) for automated code checking
 
 ---
 
-### Milestone 2: Core Domain Completion (Priority: P0)
-**Objective:** Complete the basic project management domain with proper business logic.
+### Milestone 2: Dependency Intelligence Engine — FLAGSHIP (Priority: P0)
+**Objective:** Build the core differentiator — the graph-based dependency calculation system.
 
-#### Phase 2.1 — Portfolio & Program Hierarchy
-- Portfolio CRUD (the highest organizational grouping)
-- Program CRUD (collection of related projects)
-- Project→Program→Portfolio hierarchy enforcement
-- Cascading status rollup
-
-#### Phase 2.2 — Enhanced Task & Sprint Management
-- Task lifecycle state machine (TODO→IN_PROGRESS→IN_REVIEW→DONE/BLOCKED)
-- Sprint capacity planning (committed points vs. actual)
-- Sprint burndown data calculation
-- Task assignment with validation
-- Task filtering, sorting, and search
-
-#### Phase 2.3 — Team & Workload Foundation
-- Team capacity management (hours per sprint)
-- Team member assignment with roles
-- PTO calendar tracking
-- Capacity vs. utilization calculation (real, not stubbed)
-
-**Exit Criteria:** Full CRUD for all domain entities, business rules enforced, proper relational integrity.
+* **Phase 2.1 — Neo4j Integration & Sync Layer**
+  - Add Neo4j to Docker Compose environments
+  - Configure `spring-data-neo4j` dependencies and credentials
+  - Create Neo4j nodes mapping `TaskNode` and `MilestoneNode`
+  - Implement Postgres-to-Neo4j event-driven transactional listeners
+* **Phase 2.2 — Dependency Edge Control & Cycle Validation**
+  - Expose API endpoints for `BLOCKS` and `RELATES_TO` relationship creation
+  - Implement graph cycle detection validation (DFS, Kahn, or Tarjan) to reject circular dependency chains
+* **Phase 2.3 — Critical Path Detection Algorithm**
+  - Implement topological sort sequence calculator
+  - Slack calculation (Earliest Start/Finish, Latest Start/Finish)
+  - Expose `/api/v1/tasks/{id}/critical-path` returning sequence lists
 
 ---
 
-### Milestone 3: Dependency Intelligence Engine — FLAGSHIP (Priority: P0)
-**Objective:** Build the core differentiating feature — the graph-based dependency analysis system.
+### Milestone 3: Interactive Graph UI — FLAGSHIP (Priority: P0)
+**Objective:** Render the interactive dependency graph in the React frontend.
 
-#### Phase 3.1 — Neo4j Integration & Sync Layer
-- Add Neo4j to Docker Compose
-- Add `spring-data-neo4j` dependency
-- Create Neo4j node entities (`TaskNode`, `MilestoneNode`, `DeveloperNode`, `TeamNode`)
-- Implement Postgres→Neo4j sync via Spring Events
-- Ensure bidirectional consistency
-
-#### Phase 3.2 — Graph Edge Management & Validation
-- `BLOCKS` and `RELATES_TO` edge creation API
-- Circular dependency detection (Tarjan's algorithm)
-- Cross-team dependency identification (auto-tagging `IS_CROSS_TEAM`)
-- Edge deletion with cascading recalculation
-
-#### Phase 3.3 — Critical Path Algorithm (CPA)
-- Topological sort implementation
-- Forward pass (Earliest Start/Earliest Finish)
-- Backward pass (Latest Start/Latest Finish)
-- Slack calculation per node
-- Critical path identification (zero-slack path)
-- Bottleneck Score calculation formula
-
-#### Phase 3.4 — Dependency Risk Scoring
-- Risk Score formula: `min(1.0, (T_delay × C_weight) / max(0.1, Slack))`
-- Risk classification thresholds (Low/Moderate/High/Critical)
-- Cross-team 1.2x risk multiplier
-- Release Impact Analysis (traverse to terminal milestone)
-
-#### Phase 3.5 — Graph API & D3/ReactFlow Visualization
-- `GET /api/v1/projects/{id}/graph` — D3-compatible JSON
-- `GET /api/v1/tasks/{id}/critical-path` — Calculated path
-- Interactive ReactFlow canvas (zoom, pan, click)
-- Critical path highlighting (red edges)
-- Bottleneck node visual indicators
-- Node inspector drawer (click → task details)
-- Cross-team edges visual distinction (dashed lines)
-
-**Exit Criteria:** The UI renders an interactive graph. Delaying a task visually updates the critical path and risk scores in real-time.
+* **Phase 3.1 — ReactFlow Canvas Integration**
+  - Install `reactflow` and map fetched backend graph coordinates to the canvas
+  - Support zoom, pan, and manual node layout adjustments
+* **Phase 3.2 — Graph Styles & Detail Inspector**
+  - Color-code zero-slack critical path edges red
+  - Highlight bottlenecks and cross-team blocking linkages (dashed lines)
+  - Clicking task nodes opens sidebar details drawer
 
 ---
 
 ### Milestone 4: Project Health Engine — FLAGSHIP (Priority: P0)
-**Objective:** Replace subjective status reporting with an objective, algorithmic health score.
+**Objective:** Algorithmically grade project progress and risks using real metrics.
 
-#### Phase 4.1 — Health Score Calculator
-- Implement all 8 dimensions from SRS §4.2:
-  1. Velocity Consistency (15%)
-  2. Blocker Density (15%)
-  3. Defect Leakage (10%)
-  4. Dependency Risk (20%)
-  5. Team Utilization (10%)
-  6. Sprint Stability (10%)
-  7. Scope Creep (10%)
-  8. Release Confidence (10%)
-- Weighted composite aggregation formula
-- Health score threshold classification (Healthy/At Risk/Critical/Failing)
-
-#### Phase 4.2 — Health Score Infrastructure
-- `health_metrics` time-series snapshots
-- 72-hour data staleness decay
-- Custom weight configuration API (PMO-adjustable)
-- Historical trendline (30-day) API
-
-#### Phase 4.3 — Health Score Visualization
-- Speedometer/gauge dial component
-- 8-dimension spider/radar chart
-- Health trend line chart (30-day)
-- Threshold-based color coding (Green/Yellow/Orange/Red)
-- Hover-to-explain formula breakdown
-
-**Exit Criteria:** Dashboard displays an accurate 0-100 health score calculated from real task/sprint/dependency data.
+* **Phase 4.1 — Health Score Calculator**
+  - Code dynamic calculation aggregates across 8 dimensions (Velocity, Blocker Density, Capacity, etc.)
+  - Set up weighted composite scoring service (0-100 score metrics)
+* **Phase 4.2 — Health History Snapshots**
+  - Setup database cron snapshots saving daily health scores
+* **Phase 4.3 — Health score visualizations**
+  - Speedometer dial gauges, radar spider charts, and 30-day historical trend lines in the UI
 
 ---
 
-### Milestone 5: Sprint Intelligence & Workload Analytics (Priority: P1)
-**Objective:** Provide real-time sprint tracking and team capacity management.
+### Milestone 5: DevOps & Production Deployment (Priority: P0)
+**Objective:** Ship a secure, live production environment to the internet.
 
-#### Phase 5.1 — Sprint Intelligence
-- Real-time burndown chart (ideal vs. actual vs. predicted)
-- Burn-up chart (completed vs. total scope)
-- Scope creep detection and alert banner
-- Velocity trend tracking (last 5 sprints)
-- Rolled-over task flagging
+* **Phase 5.1 — Multi-Stage Container Setup**
+  - Construct production Dockerfile builds for React and Spring Boot
+* **Phase 5.2 — AWS Hosting & DNS Setup**
+  - Provision AWS host, set up Nginx reverse proxy with SSL certificate (HTTPS)
+  - Set up DNS domain mapping (Route53)
 
-#### Phase 5.2 — Workload Analytics
-- Capacity matrix/heatmap (developers × days)
-- Team utilization gauge (aggregated percentage)
-- Overloaded developer detection (>100% utilization = red)
-- Drag-and-drop task rebalancing between developers
-- QA-specific capacity tracking
+---
 
-**Exit Criteria:** Sprint pages show live burndown/burnup. Workload page shows a heatmap with red cells for overloaded developers.
+### Milestone 5.5: Production Observability (Priority: P1)
+**Objective:** Establish monitoring and health diagnostics in production.
+
+* **Phase 5.5.1 — Application Metrics & Logging**
+  - Configure Spring Boot Actuator endpoints and Micrometer metrics collection
+  - Implement structured JSON request logging and trace correlation IDs
+* **Phase 5.5.2 — Health Check Integration**
+  - Expose Liveness, Readiness, and Health status probes for production monitoring
 
 ---
 
 ### Milestone 6: AI Insights Engine (Priority: P1)
-**Objective:** Add conversational AI intelligence grounded in project data.
+**Objective:** Provide LLM-generated explanations for project data.
 
-#### Phase 6.1 — RAG Pipeline Foundation
-- Gemini API integration (Spring Boot HTTP client)
-- Context builder (serialize project health + graph data to JSON)
-- Strict system prompt templates (anti-hallucination rules)
-- Response parser and confidence scoring
-
-#### Phase 6.2 — AI Summary & Risk Explanation
-- "Summarize Project" button → 2-paragraph AI narrative
-- Root cause identification with citation links
-- Remediation recommendations (actionable, specific)
-- Executive summary generation (plain English)
-
-#### Phase 6.3 — Conversational AI Chatbot
-- Chat interface side-drawer UI
-- LangGraph/LangChain4j orchestration
-- Tool-calling capability (query DB, query graph)
-- Conversation history persistence
-
-**Exit Criteria:** AI generates accurate, citation-backed narratives from real project data. Chatbot answers "Who is blocking me?" correctly.
+* **Phase 6.1 — Gemini Client Integration**
+  - Integrate Gemini API via Spring Boot HTTP configurations
+* **Phase 6.2 — Context Grounding & Explanations**
+  - Construct prompt templates embedding project health and graph metrics JSON
+  - Generate lightweight risk explanations and executive summaries with source citations
 
 ---
 
-### Milestone 7: Integrations & Webhook Engine (Priority: P1)
-**Objective:** Connect DeliveryFlow to external tools for real-time data ingestion.
+### Milestone 7: Sprint Intelligence & Workload Analytics (Priority: P1)
+**Objective:** Track sprint velocity and manage developer workloads.
 
-#### Phase 7.1 — Webhook Ingestion Infrastructure
-- Jira webhook endpoint (`POST /api/v1/integrations/webhook/jira`)
-- GitHub webhook endpoint
-- HMAC signature validation
-- Kafka event queuing (or in-memory queue for MVP)
-- Dead Letter Queue for failed processing
-- Rate limiting (per-tenant)
-
-#### Phase 7.2 — Integration Management
-- Integration cards UI (Jira, GitHub, Slack)
-- OAuth flow for Jira/GitHub connection
-- Webhook health status indicators (green/red)
-- Manual "Full Sync" trigger
-- Data freshness indicator
-
-**Exit Criteria:** Jira webhooks are received, validated, and update project data within 2 seconds.
+* **Phase 7.1 — Sprint Burndown Charts**
+  - Burndown/burnup graphs detailing actual progress vs. ideal timelines
+* **Phase 7.2 — Workload Heatmaps**
+  - Matrix grids highlighting over-capacity team members (>100% capacity)
+  - Drag-and-drop task rebalancing controls
 
 ---
 
-### Milestone 8: Executive Reporting (Priority: P2)
-**Objective:** Automate status report generation for executives.
+### Milestone 8: Integrations & Webhook Ingestion (Priority: P1)
+**Objective:** Link DeliveryFlow to external tools.
 
-- PDF generation engine (Puppeteer or jsPDF)
-- Report template system
-- Scheduled report delivery (cron-based)
-- Email delivery integration
-- Excel/CSV export capability
-- Custom branding (company logo)
-
-**Exit Criteria:** A PMO can schedule a Friday 8AM PDF report containing portfolio health scores.
+* **Phase 8.1 — Webhook Services**
+  - Create secure endpoints for Jira and GitHub payload webhooks (HMAC signature checks)
+* **Phase 8.2 — OAuth Configurations**
+  - Setup connection widgets linking external repositories to projects
 
 ---
 
-### Milestone 9: Production Deployment & DevOps (Priority: P1)
-**Objective:** Ship a production-ready application.
+### Milestone 9: Executive Reporting (Priority: P2)
+**Objective:** Automate portfolio reporting.
 
-- Multi-stage Dockerfiles (frontend + backend)
-- Production docker-compose with all services (Postgres, Neo4j, Redis)
-- Nginx reverse proxy configuration
-- SSL/TLS certificate setup
-- Environment-specific configuration (dev/staging/prod)
-- GitHub Actions CI pipeline (build + test + lint)
-- Database migration strategy for production
-- Health check endpoints
-- Structured logging for CloudWatch/ELK
-
-**Exit Criteria:** Application is deployed to a public URL with HTTPS, passing all CI checks.
+* **Phase 9.1 — PDF/Excel Generators**
+  - Code PDF summary report layout exporters and scheduled email triggers (cron based)
 
 ---
 
-### Milestone 10: Quality & Polish (Priority: P1)
-**Objective:** Ensure the application meets industry-grade quality standards.
+### Milestone 10: Enterprise Domain & Quality Polish (Priority: P1)
+**Objective:** Implement remaining portfolio structures and finalize for demo.
 
-- Comprehensive unit test suite (>80% backend coverage)
-- Integration tests with Testcontainers
-- Frontend component tests (React Testing Library)
-- E2E test suite (Playwright or Cypress)
-- Performance profiling and optimization
-- Accessibility audit (WCAG 2.1 AA)
-- Security audit (OWASP Top 10)
-- Rich demo data population (6 months of realistic historical data)
-- Production-grade README with architecture diagrams
-- API documentation (OpenAPI/Swagger)
-
-**Exit Criteria:** All tests pass. Application performs under load. Security vulnerabilities remediated.
+* **Phase 10.1 — Portfolio/Program CRUD**
+  - Implement Portfolios & Programs hierarchical layers
+* **Phase 10.2 — Seeder & Documentation**
+  - Build rich seeder script loading 6 months of historical metric data
+  - Finalize GitHub README and architecture layout diagrams
 
 ---
 
@@ -631,18 +519,18 @@ As specified, the UI is **nowhere near production quality**. Here's a structured
 
 | Dimension | Score | Notes |
 |:----------|:-----:|:------|
-| **Documentation & Planning** | 🟢 85% | Excellent SRS, ADRs, architecture docs |
-| **Backend API (CRUD)** | 🟡 35% | Basic CRUD works, no security/validation |
-| **Backend Business Logic** | 🔴 5% | Only basic analytics aggregation |
-| **Database Schema** | 🟡 40% | Core tables exist, 6 SRS tables missing |
-| **Authentication & Security** | 🔴 0% | Nothing implemented |
-| **Dependency Engine (Flagship)** | 🔴 0% | Not started |
-| **Health Score Engine (Flagship)** | 🔴 0% | Not started |
-| **AI Insights Engine** | 🔴 0% | Not started |
-| **Frontend UI** | 🔴 10% | Shell exists, mostly hardcoded/stubs |
-| **Testing** | 🔴 0% | No meaningful tests |
-| **DevOps & Deployment** | 🔴 5% | Only local Docker Compose |
-| **Overall Progress** | 🔴 **~12%** | |
+| **Documentation & Planning** | 🟢 90% | Highly optimized roadmap, SRS, and spec designs |
+| **Backend API (CRUD)** | 🟡 40% | Core REST endpoints secured with validation |
+| **Backend Business Logic** | 🔴 5% | Relational query aggregation |
+| **Database Schema** | 🟡 50% | Core tables populated; security audits mapped |
+| **Authentication & Security** | 🟢 100% | Spring Security & JWT fully implemented and tested |
+| **Dependency Engine (Flagship)** | 🔴 0% | Neo4j setup scheduled next |
+| **Health Score Engine (Flagship)** | 🔴 0% | Calculations pending domain data |
+| **AI Insights Engine** | 🔴 0% | Scheduled after deployment and observability |
+| **Frontend UI** | 🔴 10% | Dashboard shell, visual stubs |
+| **Testing** | 🟢 85% | 35 backend tests running and green |
+| **DevOps & Deployment** | 🔴 5% | Local docker configuration |
+| **Overall Progress** | 🟡 **~30%** | Milestone 1 Core Security & CI completed |
 
-> [!CAUTION]
-> **The two flagship features that differentiate DeliveryFlow from every other project management tool — the Dependency Intelligence Engine and the Project Health Engine — are at 0%.** These must be the primary focus going forward, but they cannot be built without first establishing the security foundation (Milestone 1).
+> [!TIP]
+> With the security foundation completed, development should now transition directly to Milestone 2: Dependency Intelligence Engine (Neo4j and circular dependency calculations). This moves the high-value flagship graph capabilities into the immediate execution loop.

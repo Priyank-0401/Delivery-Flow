@@ -3,9 +3,9 @@
 **Document ID:** DF-RDM-03  
 **Target Audience:** Engineering (Solo Developer)
 
-This document is the master execution blueprint for DeliveryFlow. It completely structures the project into a 12-sprint roadmap optimized for building a **Delivery Intelligence Platform**. 
+This document is the master execution blueprint for DeliveryFlow. It structures the project into a 12-sprint roadmap optimized for building a **Delivery Intelligence Platform** focused on graph-based dependency mapping and objective health metrics.
 
-The strategic value chain is: `CRUD → Demo Data → Analytics → Dashboard → Health Engine → Neo4j Graph → Risk Engine → AI`.
+The strategic value chain is: `Security, Validation & CI → Neo4j Graph Sync → Graph Algorithms → Graph UI → Health Score Engine → Health Charts → Production Deployment → Production Observability → AI Summary Layer → Workloads Heatmap → Webhooks & PDF Reports → Enterprise CRUD & Polish`.
 
 ---
 
@@ -14,130 +14,101 @@ The strategic value chain is: `CRUD → Demo Data → Analytics → Dashboard �
 ## Sprint 1: Platform Foundation (Completed)
 **Goal:** Establish the technical bedrock of the application.
 - **Backend:** Spring Boot 3, PostgreSQL 15, Flyway, Swagger/OpenAPI.
-- **Architecture:** Package-by-feature structure.
-- **Deliverables:** A booting backend that connects to a local database with Swagger documentation generated.
+- **DoD:** A booting backend that connects to a local database with Swagger documentation generated.
 
-## Sprint 2: Core Domain (Completed)
-**Goal:** Establish the operational database layer and core CRUD capabilities.
-- **Entities & Tables:** `users`, `teams`, `team_members`, `projects`, `project_teams`, `sprints`, `tasks`.
-- **Core Status Enums:** `TaskStatus`, `ProjectStatus`, `SprintStatus` formally defined in code.
-- **Relationships:** Many-to-Many for Users↔Teams and Projects↔Teams. One-to-Many for Project→Sprints and Sprint→Tasks.
-- **Deliverables:** Fully functional CRUD REST APIs with DTOs and Mappers, verified via Swagger.
+## Sprint 2: Core Domain, Security & CI (Completed)
+**Goal:** Establish user management, database tables, the API security filter chain, and basic CI.
+- **Entities & Tables:** `users`, `teams`, `team_members`, `projects`, `project_teams`, `sprints`, `tasks`, `refresh_tokens`, `audit_logs`.
+- **Security:** Spring Security JWT filter, dynamic CORS, Method-level RBAC (`ADMIN > PMO > MANAGER > MEMBER`), and global validation.
+- **CI/CD:** Setup GitHub Actions CI workflow (build, test, lint) for automated code checking.
+- **DoD:** Secured REST endpoints with JSR-380 validation, standardized exception payloads, and automated green checks in GitHub.
 
-## Sprint 3: Frontend CRUD Integration & Demo Data
-**Goal:** Replace Swagger with a functional UI and populate the system with realistic data to power future analytics.
-- **Frontend Pages:**
-  - `Projects:` List Projects (AG Grid), Create Project (Dialog), View Project.
-  - `Teams:` List Teams (AG Grid), Create Team, Assign Members.
-  - `Sprints:` List Sprints, Create Sprint.
-  - `Tasks:` List Tasks, Create Task, Assign User.
-- **Demo Data Seeder (Backend):** Automatically generate **20 Users, 6 Teams, 15 Projects, 45 Sprints, and 500 Tasks** upon application boot.
-- **Deliverables:** Ability to navigate the entire operational lifecycle of DeliveryFlow strictly through the React UI with a rich, believable dataset loaded.
+## Sprint 3: Dependency Graph Foundation
+**Goal:** Introduce the Neo4j Graph Database to model task linkages.
+- **Database:** Spin up Neo4j database service container in Docker Compose.
+- **Backend:** Configure `spring-data-neo4j` properties. Define `TaskNode` mapping entities.
+- **Sync:** Implement Postgres-to-Neo4j transactional event listeners (creating/deleting Postgres tasks automatically updates Neo4j).
+- **DoD:** Postgres task edits reflect instantly in the Neo4j graph nodes.
 
-## Sprint 4: Analytics Foundation
-**Goal:** Transition from basic data storage to business intelligence. Establish historical tracking.
-- **Backend Module:** `analytics`
-- **Metrics Calculated:**
-  - *Project Metrics:* Total Tasks, Completed Tasks, Blocked Tasks, Overdue Tasks, High Priority Tasks, Completion %.
-  - *Team Metrics:* Total Members, Assigned Tasks, Capacity Utilization.
-  - *Sprint Metrics:* Total Story Points, Completed Story Points, Remaining Story Points.
-- **Deliverables:** Robust Analytics APIs returning detailed JSON DTOs, and cron jobs to snapshot daily historical data (daily completion %, daily blocked tasks, daily utilization) to enable trend graphs.
+## Sprint 4: Graph Algorithms
+**Goal:** Leverage graph analytics to detect circular dependencies and find the critical path.
+- **Backend Algorithms:** 
+  - *Circular Dependency Detection:* Implement graph cycle detection validation (such as Kahn's, Tarjan's, or DFS-based) to reject blocking links that create loops.
+  - *Critical Path Detection:* Topological sort slack calculator (Earliest Start/Finish, Latest Start/Finish).
+- **DoD:** API successfully calculates task sequence slack and flags the zero-slack critical path sequence.
 
-## Sprint 5: Executive Dashboard
-**Goal:** Build the flagship UI. Make the product visually impressive and recruiter-ready.
-- **Frontend Views:**
-  - `Global Dashboard:` High-level view of all Projects, Teams, and overall Completion Rates.
-  - `Project Details Dashboard:` `/projects/{id}` view combining operational task lists with analytical widgets.
-- **Components:** Metric Cards and Recharts (Trend Graphs, Task Status Distribution, Team Utilization, Project Completion Donuts).
-- **Deliverables:** A rich, interactive dashboard fully wired to the Sprint 4 Analytics APIs.
+## Sprint 5: Graph UI Visualization
+**Goal:** Render the interactive dependency graph in the frontend.
+- **Frontend:** Install `reactflow` and map fetched backend dependency node data to the interactive canvas.
+- **UI:** Color-code critical path edges in red, style cross-team blocks as dashed lines, and show metadata details inside a slide-drawer.
+- **DoD:** Visual drag-and-drop task graph is active and functional in the browser.
 
-## Sprint 5.5: Data Export
-**Goal:** A mini-phase to prove DeliveryFlow is built for real business users (PMs and Delivery Managers).
-- **Features:** Export Project Report, Export Risk Report.
-- **Deliverables:** Ability to download key dashboards and tables as CSV and PDF.
+## Sprint 6: Project Health Scoring
+**Goal:** Implement the math calculations grading project health objectively.
+- **Backend:** Code the `HealthScoreCalculator` service mapping the 8 metric dimensions (Velocity, Blocker Density, Utilization, Overdue status, etc.).
+- **Database:** Create the `health_metrics` snapshot audit tables to cache historical trends.
+- **DoD:** Database calculates aggregated health metrics per project on demand.
 
-## Sprint 6: Health Engine
-**Goal:** Move to prescriptive analytics. Algorithmically grade projects and teams.
-- **Health Dimensions:** Task Completion, Blocked Tasks, Overdue Tasks, Unassigned Tasks, Sprint Progress, Team Utilization, Priority Tasks, Project Activity.
-- **Backend:** `HealthEngineService` (initially calculated dynamically on-the-fly, architected for future caching).
-- **Design Note for Sprint 9:** Begin designing inputs for the Risk Engine here (Health Score, Blocked Tasks, Critical Path Length, Overdue Tasks).
-- **Output:** `{"healthScore": 82, "status": "HEALTHY"}` (Color-coded: Green, Yellow, Red).
-- **Deliverables:** Visual health badging integrated across all Dashboard and Project views, plus daily health score snapshots.
+## Sprint 7: Project Health Visualization
+**Goal:** Render color-coded health stats across the dashboard.
+- **Frontend:** Build Dial Gauges, Spider/Radar charts displaying the 8 dimensions, and 30-day trend lines.
+- **DoD:** Dashboard visually represents objective health aggregates based on live metrics.
 
-## Sprint 7: Neo4j Foundation
-**Goal:** Introduce the Graph Database to handle complex relationships that relational databases struggle with.
-- **Backend:** `spring-data-neo4j` integration.
-- **Graph Schema:** `Task Nodes` connected by `BLOCKS` relationships. Dual-write sync with PostgreSQL.
-- **Deliverables:** APIs to Create, Store, and Delete dependencies between tasks (e.g., `AUTH-1` BLOCKS `API-2`).
+## Sprint 8: Production Deployment
+**Goal:** Deploy the application to a public HTTPS URL.
+- **Infrastructure:** Multi-stage Dockerfiles, AWS EC2 / Nginx TLS setup, and DNS mapping.
+- **DoD:** The application compiles, passes tests, and is publicly accessible via HTTPS.
 
-## Sprint 8: Graph Intelligence
-**Goal:** Leverage Neo4j algorithms to provide advanced project management insights.
-- **Algorithms:**
-  - *Critical Path Detection:* Find the longest sequence of dependent tasks.
-  - *Circular Dependency Detection:* Prevent impossible task chains.
-  - *Bottleneck Detection:* Identify tasks blocking the most downstream work.
-- **Deliverables:** Visual dependency graphs in the UI (React Flow) highlighting the Critical Path in red.
+## Sprint 8.5: Production Observability
+**Goal:** Establish monitoring and health diagnostics in production.
+- **Backend:** Configure Spring Boot Actuator, Micrometer endpoints, health checks, and structured JSON request logging.
+- **DoD:** Real-time application metrics, request logging, and error tracking are fully visible in production.
 
-## Sprint 9: Risk Engine
-**Goal:** Automatically assess and predict project failure risks based on the inputs designed in Sprint 6.
-- **Core Status Enum:** `RiskLevel` formally defined.
-- **Backend:** `RiskEngineService`.
-- **Logic:** Combine Health Scores + Graph Intelligence (e.g., Risk = HIGH because: 4 blocked tasks, 2 overdue sprints, Team overloaded, Critical Path delayed).
-- **Deliverables:** Risk Assessment APIs and UI alerts on the Executive Dashboard.
+## Sprint 9: AI Insights Engine
+**Goal:** Add lightweight Gemini-driven summaries explaining project statuses.
+- **Backend:** Integrate Gemini API, construct grounded prompt templates embedding project metrics and dependency graph JSON.
+- **DoD:** Dashboard displays a plain English summary of project risks and remediation recommendations with database source citations.
 
-## Sprint 10: AI Layer
-**Goal:** Integrate Large Language Models (Gemini) to explain the data.
-- **Features:** 
-  - Executive Summaries: "Translate this project's status into a 2-paragraph email."
-  - Risk Explanation: "Why is this project failing in plain English?"
-- **Deliverables:** Generative text components integrated into the Project Details Dashboard.
+## Sprint 10: Sprint Workloads & Heatmaps
+**Goal:** Manage developer capacity allocation.
+- **Frontend:** Burndown/burnup charts, developer capacity matrix grids showing over-allocation.
+- **DoD:** Managers can drag tasks to re-balance team workloads in the UI.
 
-## Sprint 11: Ask DeliveryFlow
-**Goal:** Conversational intelligence interface.
-- **Features:** Chat UI side-drawer. 
-- **Capabilities:** User asks "Who is blocking me?" and AI queries the Neo4j graph and PostgreSQL data to answer accurately.
-- **Deliverables:** A fully functional Chatbot assistant.
+## Sprint 11: Webhooks & Reporting
+**Goal:** Automate reports and external updates.
+- **Backend:** Ingestion routes for Jira/GitHub webhook payloads. PDF report generator with scheduled email triggers (cron based).
+- **DoD:** Project metrics update from external Jira commits, and users receive PDF health logs.
 
-## Sprint 12: Deployment & Final Polish
-**Goal:** Productionize the application for portfolio showcase.
-- **Infrastructure:** Docker Compose production setup, AWS EC2 / Vercel deployment.
-- **Deliverables:** A live, publicly accessible URL (`https://deliveryflow.io`) running the Demo Data Seeder for instant recruiter impact.
+## Sprint 12: Enterprise CRUD & Polish
+**Goal:** Complete advanced hierarchies and seed realistic historical records.
+- **Backend:** Map Portfolios & Programs hierarchical associations and seed 6 months of historical metrics.
+- **DoD:** Navigating to a demo portfolio shows a rich dataset of historical graphs on first load.
 
 ---
 
 # PART 2: Database Schema Evolution
 
-The database strategy utilizes PostgreSQL as the source of truth for operational and analytical state, with Neo4j functioning purely as a graph computation engine.
+PostgreSQL is the source of truth for operational state, with Neo4j functioning purely as a graph computation engine.
 
-## Current Relational Tables (Sprints 1-3)
-*The Operational Layer*
-- `users`, `teams`, `team_members`, `projects`, `project_teams`, `sprints`, `tasks`, `flyway_schema_history`
+## Current Relational Tables (Sprints 1-2)
+- `users`, `teams`, `team_members`, `projects`, `project_teams`, `sprints`, `tasks`, `refresh_tokens`, `audit_logs`
 
-## Future Relational Tables (Sprints 4-10)
-*The Intelligence Layer*
-
-### Sprint 4: Analytics
-- `analytics_snapshots` (id, project_id, total_tasks, completed_tasks, blocked_tasks, completion_rate, created_at)
-  - *Purpose: Daily snapshots to capture historical trends over time (Velocity, Utilization).*
+## Future Relational Tables (Sprints 3-12)
 
 ### Sprint 6: Health Engine
+- `health_metrics` (id, project_id, metric_type, value, recorded_at)
 - `health_scores` (id, project_id, score, status, created_at)
-  - *Purpose: Daily health history auditing.*
 
-### Sprint 8: Graph Intelligence (Optional Audit)
-- `dependency_audit` (id, task_id, action, created_at)
-
-### Sprint 9: Risk Engine
-- `risk_assessments` (id, project_id, risk_score, risk_level, reason, created_at)
-
-### Sprint 10 & 11: AI Layer
+### Sprint 9: AI Layer
 - `ai_summaries` (id, project_id, summary, generated_at)
-- `ai_conversations` (id, project_id, user_prompt, ai_response, created_at)
 
-## Neo4j Graph Database
-*No relational tables used. Operates strictly on Nodes and Edges.*
-- **Nodes:** `Task`, `Milestone`
-- **Edges (Relationships):** `BLOCKS`, `TARGETS`
+### Sprint 11: Webhooks & Reports
+- `integration_configs` (id, provider, access_token, active_status)
+- `report_schedules` (id, recipient, interval_cron, report_type)
+
+## Neo4j Graph Schema (Sprint 3)
+- **Nodes:** `TaskNode`, `MilestoneNode`
+- **Edges:** `BLOCKS`, `RELATES_TO`
 
 ---
 
@@ -145,4 +116,4 @@ The database strategy utilizes PostgreSQL as the source of truth for operational
 Do not over-engineer during the MVP. 
 - **Stick to the core stack:** React, Spring Boot, Postgres, Neo4j, Gemini, AWS.
 - **Avoid:** Kafka, Microservices, Kubernetes, Redis, Event Sourcing, CQRS. 
-The current stack introduces more than enough complexity for a flagship student/portfolio project. Focus on proving an understanding of how engineering organizations actually deliver software.
+Focus on proving an understanding of how engineering organizations deliver high-value intelligence products.
