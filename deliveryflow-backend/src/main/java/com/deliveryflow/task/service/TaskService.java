@@ -4,10 +4,15 @@ import com.deliveryflow.common.exception.ResourceNotFoundException;
 import com.deliveryflow.task.dto.CreateTaskRequest;
 import com.deliveryflow.task.dto.TaskResponse;
 import com.deliveryflow.task.entity.Task;
+import com.deliveryflow.task.event.TaskCreatedEvent;
+import com.deliveryflow.task.event.TaskDeletedEvent;
+import com.deliveryflow.project.repository.ProjectRepository;
 import com.deliveryflow.task.mapper.TaskMapper;
 import com.deliveryflow.task.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,10 +21,16 @@ import java.util.stream.Collectors;
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final ProjectRepository projectRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Autowired
-    public TaskService(TaskRepository taskRepository) {
+    public TaskService(TaskRepository taskRepository,
+                       ProjectRepository projectRepository,
+                       ApplicationEventPublisher eventPublisher) {
         this.taskRepository = taskRepository;
+        this.projectRepository = projectRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     public List<TaskResponse> getAllTasks() {
@@ -49,8 +60,30 @@ public class TaskService {
         return TaskMapper.toResponse(task);
     }
 
+    @Transactional
     public TaskResponse createTask(CreateTaskRequest request) {
         Task task = TaskMapper.toEntity(request);
-        return TaskMapper.toResponse(taskRepository.save(task));
+        if (task.getTaskKey() == null) {
+            String projectCode = "TASK";
+            if (task.getProjectId() != null) {
+                projectCode = projectRepository.findById(task.getProjectId())
+                        .map(com.deliveryflow.project.entity.Project::getProjectCode)
+                        .orElse("TASK");
+            }
+            long count = taskRepository.count();
+            task.setTaskKey(projectCode + "-" + (count + 1));
+        }
+        System.out.println("DEBUG: taskKey=" + task.getTaskKey() + ", projectId=" + task.getProjectId() + ", title=" + task.getTitle());
+        Task savedTask = taskRepository.save(task);
+        eventPublisher.publishEvent(new TaskCreatedEvent(this, savedTask));
+        return TaskMapper.toResponse(savedTask);
+    }
+
+    @Transactional
+    public void deleteTask(String id) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task", id));
+        taskRepository.delete(task);
+        eventPublisher.publishEvent(new TaskDeletedEvent(this, id));
     }
 }

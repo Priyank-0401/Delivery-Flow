@@ -26,5 +26,21 @@ services:
       - postgres
     restart: unless-stopped
 
+  neo4j:
+    image: neo4j:5.20.0-community
+    container_name: df-neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/neo4jpassword
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+    restart: unless-stopped
+
 volumes:
   postgres-data:
+  neo4j-data:
+  neo4j-logs:
+
