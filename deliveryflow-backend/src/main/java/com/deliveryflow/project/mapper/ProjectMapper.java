@@ -24,6 +24,24 @@ public class ProjectMapper {
         Project project = new Project();
         project.setName(request.getName());
         project.setManagerId(request.getManagerId());
+        
+        String code = request.getProjectCode();
+        if (code == null || code.trim().isEmpty()) {
+            code = generateProjectCode(request.getName());
+        }
+        project.setProjectCode(code.toUpperCase());
+        
         return project;
+    }
+
+    private static String generateProjectCode(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return "PROJ";
+        }
+        String clean = name.replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
+        if (clean.length() >= 3) {
+            return clean.substring(0, 3);
+        }
+        return clean.isEmpty() ? "PROJ" : clean;
     }
 }

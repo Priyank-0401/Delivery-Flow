@@ -22,7 +22,8 @@ import org.springframework.transaction.PlatformTransactionManager;
         "com.deliveryflow.project.repository",
         "com.deliveryflow.auth.repository",
         "com.deliveryflow.common.audit.repository",
-        "com.deliveryflow.analytics.repository"
+        "com.deliveryflow.analytics.repository",
+        "com.deliveryflow.health.repository"
     },
     transactionManagerRef = "transactionManager"
 )

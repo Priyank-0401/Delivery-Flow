@@ -45,4 +45,10 @@ public class TaskController {
     public TaskResponse createTask(@Valid @RequestBody CreateTaskRequest request) {
         return taskService.createTask(request);
     }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PMO', 'MANAGER', 'MEMBER')")
+    public TaskResponse updateTaskStatus(@PathVariable String id, @Valid @RequestBody com.deliveryflow.task.dto.UpdateTaskStatusRequest request) {
+        return taskService.updateTaskStatus(id, request.getStatus());
+    }
 }

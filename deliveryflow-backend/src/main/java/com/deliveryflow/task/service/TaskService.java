@@ -80,6 +80,16 @@ public class TaskService {
     }
 
     @Transactional
+    public TaskResponse updateTaskStatus(String id, com.deliveryflow.common.enums.TaskStatus newStatus) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task", id));
+        task.setStatus(newStatus);
+        Task savedTask = taskRepository.save(task);
+        eventPublisher.publishEvent(new com.deliveryflow.task.event.TaskUpdatedEvent(this, savedTask));
+        return TaskMapper.toResponse(savedTask);
+    }
+
+    @Transactional
     public void deleteTask(String id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", id));

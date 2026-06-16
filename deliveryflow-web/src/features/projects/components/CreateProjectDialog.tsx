@@ -15,6 +15,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
   const [formData, setFormData] = useState<CreateProjectRequest>({
     name: '',
     managerId: '',
+    projectCode: '',
   });
 
   const mutation = useMutation({
@@ -22,7 +23,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       onOpenChange(false);
-      setFormData({ name: '', managerId: '' });
+      setFormData({ name: '', managerId: '', projectCode: '' });
     },
   });
 
@@ -52,6 +53,18 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
               onChange={handleChange} 
               className="bg-zinc-900 border-zinc-800"
               required 
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="projectCode" className="text-sm font-medium">Project Code</label>
+            <Input 
+              id="projectCode" 
+              name="projectCode"
+              placeholder="e.g. PHX (Leave empty to auto-generate)"
+              value={formData.projectCode} 
+              onChange={handleChange} 
+              className="bg-zinc-900 border-zinc-800"
+              maxLength={10}
             />
           </div>
           <div className="space-y-2">

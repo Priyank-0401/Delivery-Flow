@@ -25,15 +25,21 @@ public class ActivityService {
     }
 
     @Transactional
-    public void logActivity(String eventType, String entityType, String entityId, String userId, String message) {
+    public void logActivity(String eventType, String entityType, String entityId, String projectId, String userId, String message) {
         ActivityEvent event = new ActivityEvent();
         event.setEventType(eventType);
         event.setEntityType(entityType);
         event.setEntityId(entityId);
+        event.setProjectId(projectId);
         event.setUserId(userId);
         event.setMessage(message);
         event.setCreatedAt(LocalDateTime.now());
         activityEventRepository.save(event);
+    }
+
+    @Transactional
+    public void logActivity(String eventType, String entityType, String entityId, String userId, String message) {
+        logActivity(eventType, entityType, entityId, null, userId, message);
     }
 
     private ActivityEventDTO toDTO(ActivityEvent entity) {

@@ -17,6 +17,7 @@ public class ActivityEvent {
     private String eventType;
     private String entityType;
     private String entityId;
+    private String projectId;
     private String userId;
     private String message;
     private LocalDateTime createdAt = LocalDateTime.now();

@@ -1,0 +1,189 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "DeliveryFlow Project Health API",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/v1/projects/{projectId}/health": {
+      "get": {
+        "summary": "Retrieve project health metrics and overall score",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectHealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/health/config": {
+      "get": {
+        "summary": "Retrieve project health configurations",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthConfigResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update project health weights config",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateHealthConfigReq"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthConfigResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/health/history": {
+      "get": {
+        "summary": "Retrieve 30-day health history snapshots",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HealthHistoryResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ProjectHealthResponse": {
+        "type": "object",
+        "properties": {
+          "projectId": { "type": "string" },
+          "overallScore": { "type": "integer" },
+          "velocityScore": { "type": "integer" },
+          "blockerScore": { "type": "integer" },
+          "defectScore": { "type": "integer" },
+          "dependencyScore": { "type": "integer" },
+          "utilizationScore": { "type": "integer" },
+          "stabilityScore": { "type": "integer" },
+          "scopeCreepScore": { "type": "integer" },
+          "releaseConfidenceScore": { "type": "integer" },
+          "contributingFactors": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "lastCalculatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "HealthConfigResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "projectId": { "type": "string" },
+          "velocityWeight": { "type": "number" },
+          "blockerWeight": { "type": "number" },
+          "defectWeight": { "type": "number" },
+          "dependencyWeight": { "type": "number" },
+          "utilizationWeight": { "type": "number" },
+          "stabilityWeight": { "type": "number" },
+          "scopeCreepWeight": { "type": "number" },
+          "releaseConfidenceWeight": { "type": "number" }
+        }
+      },
+      "UpdateHealthConfigReq": {
+        "type": "object",
+        "properties": {
+          "velocityWeight": { "type": "number" },
+          "blockerWeight": { "type": "number" },
+          "defectWeight": { "type": "number" },
+          "dependencyWeight": { "type": "number" },
+          "utilizationWeight": { "type": "number" },
+          "stabilityWeight": { "type": "number" },
+          "scopeCreepWeight": { "type": "number" },
+          "releaseConfidenceWeight": { "type": "number" }
+        }
+      },
+      "HealthHistoryResponse": {
+        "type": "object",
+        "properties": {
+          "projectId": { "type": "string" },
+          "score": { "type": "integer" },
+          "healthDelta": { "type": "integer" },
+          "snapshotDate": { "type": "string", "format": "date" }
+        }
+      }
+    }
+  }
+}

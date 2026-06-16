@@ -9,4 +9,6 @@ public class CreateProjectRequest {
     private String name;
     
     private String managerId;
+
+    private String projectCode;
 }

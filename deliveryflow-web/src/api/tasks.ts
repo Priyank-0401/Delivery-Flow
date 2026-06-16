@@ -46,4 +46,18 @@ export const taskService = {
     const response = await apiClient.post<TaskResponse>('/tasks', data);
     return response.data;
   },
+
+  addDependency: async (sourceId: string, targetId: string, type: string = 'BLOCKS'): Promise<any> => {
+    const response = await apiClient.post(`/tasks/${sourceId}/dependencies`, { targetTaskId: targetId, type });
+    return response.data;
+  },
+
+  removeDependency: async (sourceId: string, targetId: string): Promise<void> => {
+    await apiClient.delete(`/tasks/${sourceId}/dependencies/${targetId}`);
+  },
+
+  updateTaskStatus: async (taskId: string, status: string): Promise<TaskResponse> => {
+    const response = await apiClient.patch<TaskResponse>(`/tasks/${taskId}/status`, { status });
+    return response.data;
+  },
 };

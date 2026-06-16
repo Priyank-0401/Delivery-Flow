@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/useAuthStore';
+import { apiClient } from '@/api/apiClient';
 import { 
   Mail, 
   Lock, 
@@ -169,21 +170,40 @@ function NotificationsWidget() {
 // ==================== MAIN LOGIN PAGE ====================
 export function LoginPage() {
   const [email, setEmail] = useState('demo@deliveryflow.io');
-  const [password, setPassword] = useState('demo123');
+  const [password, setPassword] = useState('Demo@12345678');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
   const login = useAuthStore(state => state.login);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    login('mock-jwt-token-12345', {
-      id: 'USR-1',
-      name: 'Priyank Pahwa',
-      email: email,
-      role: 'Delivery Manager'
-    });
-    navigate('/dashboard');
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const response = await apiClient.post('/auth/login', {
+        email,
+        password,
+      });
+      const data = response.data;
+      login(data.accessToken, {
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+      });
+      navigate('/dashboard');
+    } catch (err: any) {
+      console.error('Login error:', err);
+      const msg = err.response?.data?.message || 'Authentication failed. Please verify your credentials and ensure the backend is running.';
+      setError(msg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -273,6 +293,12 @@ export function LoginPage() {
             <h2 className="text-2xl font-bold text-white text-center mb-1">Welcome back</h2>
             <p className="text-sm text-zinc-400 text-center mb-8">Sign in to your DeliveryFlow workspace</p>
 
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-lg text-xs font-semibold text-center mb-4 leading-normal">
+                {error}
+              </div>
+            )}
+
             <form onSubmit={handleLogin} className="space-y-4">
               {/* Email */}
               <div className="relative">
@@ -336,9 +362,10 @@ export function LoginPage() {
               {/* Sign In Button */}
               <Button 
                 type="submit" 
+                disabled={isLoading}
                 className="w-full bg-emerald-500 hover:bg-emerald-600 text-white h-12 rounded-lg text-base font-semibold flex items-center justify-center gap-2 mt-2 shadow-lg shadow-emerald-500/20 transition-all"
               >
-                Sign in
+                {isLoading ? 'Signing in...' : 'Sign in'}
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </form>

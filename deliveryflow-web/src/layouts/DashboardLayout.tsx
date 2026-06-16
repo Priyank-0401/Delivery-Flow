@@ -1,4 +1,5 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, Navigate } from "react-router-dom";
+import { useAuthStore } from "@/store/useAuthStore";
 import { 
   LayoutDashboard, 
   Activity, 
@@ -24,14 +25,21 @@ import {
   Calendar,
   Filter,
   Star,
-  CheckCircle2
+  CheckCircle2,
+  Briefcase,
+  CheckSquare
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function DashboardLayout() {
+  const token = useAuthStore(state => state.token);
   const location = useLocation();
+  
+  if (!token) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
   
   const getLinkClass = (path: string) => {
     const isActive = location.pathname.startsWith(path) || (path === '/dashboard' && location.pathname === '/');
@@ -67,56 +75,24 @@ export function DashboardLayout() {
           <Link to="/health" className={getLinkClass('/health')}>
             <Activity className="h-4 w-4" /> Project Health
           </Link>
-          <Link to="/risks" className={getLinkClass('/risks')}>
-            <ShieldAlert className="h-4 w-4" /> Risk Analysis
-          </Link>
-          <Link to="/predictive" className={getLinkClass('/predictive')}>
-            <LineChart className="h-4 w-4" /> Predictive Insights
-          </Link>
-          <Link to="/reports" className={getLinkClass('/reports')}>
-            <FileText className="h-4 w-4" /> Reports
-          </Link>
 
           <SectionTitle title="Execution" />
+          <Link to="/projects" className={getLinkClass('/projects')}>
+            <Briefcase className="h-4 w-4" /> Projects
+          </Link>
           <Link to="/dependencies" className={getLinkClass('/dependencies')}>
             <Network className="h-4 w-4" /> Dependency Map
-          </Link>
-          <Link to="/timeline" className={getLinkClass('/timeline')}>
-            <Clock className="h-4 w-4" /> Timeline
-          </Link>
-          <Link to="/backlog" className={getLinkClass('/backlog')}>
-            <ListTodo className="h-4 w-4" /> Backlog
           </Link>
           <Link to="/sprints" className={getLinkClass('/sprints')}>
             <Timer className="h-4 w-4" /> Sprints
           </Link>
-          <Link to="/milestones" className={getLinkClass('/milestones')}>
-            <Flag className="h-4 w-4" /> Milestones
+          <Link to="/tasks" className={getLinkClass('/tasks')}>
+            <CheckSquare className="h-4 w-4" /> Tasks
           </Link>
 
           <SectionTitle title="Collaboration" />
           <Link to="/teams" className={getLinkClass('/teams')}>
             <Users className="h-4 w-4" /> Teams
-          </Link>
-          <Link to="/workload" className={getLinkClass('/workload')}>
-            <BarChart4 className="h-4 w-4" /> Workload
-          </Link>
-          <Link to="/communication" className={getLinkClass('/communication')}>
-            <MessageSquare className="h-4 w-4" /> Communication
-          </Link>
-
-          <SectionTitle title="Integrations" />
-          <Link to="/jira" className={getLinkClass('/jira')}>
-            <Blocks className="h-4 w-4" /> Jira
-          </Link>
-          <Link to="/github" className={getLinkClass('/github')}>
-            <GitBranch className="h-4 w-4" /> GitHub
-          </Link>
-          <Link to="/slack" className={getLinkClass('/slack')}>
-            <MessageCircle className="h-4 w-4" /> Slack
-          </Link>
-          <Link to="/cicd" className={getLinkClass('/cicd')}>
-            <Workflow className="h-4 w-4" /> CI/CD
           </Link>
         </nav>
 

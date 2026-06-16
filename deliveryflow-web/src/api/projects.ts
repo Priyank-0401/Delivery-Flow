@@ -17,6 +17,7 @@ export interface ProjectResponse {
 export interface CreateProjectRequest {
   name: string;
   managerId: string;
+  projectCode?: string;
 }
 
 export const projectService = {

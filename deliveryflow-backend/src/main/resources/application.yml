@@ -14,6 +14,12 @@ spring:
     password: rootpassword
     driver-class-name: org.postgresql.Driver
     
+  neo4j:
+    uri: bolt://localhost:7687
+    authentication:
+      username: neo4j
+      password: neo4jpassword
+    
   jpa:
     hibernate:
       ddl-auto: validate

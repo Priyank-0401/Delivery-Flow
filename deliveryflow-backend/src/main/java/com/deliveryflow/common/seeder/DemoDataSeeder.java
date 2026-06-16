@@ -49,6 +49,15 @@ public class DemoDataSeeder {
     public void seedData() {
         // Skip if data already exists (beyond the initial V1 seed user)
         if (userRepository.count() > 1) {
+            // Self-heal: Update users that have the incorrect legacy password hash
+            String oldHash = "$2a$12$vI8aWBnd7G4ZByP.Nsz9M.j9D1Pj4K4y1d8f1eN66t8lPkW2u8aWy";
+            userRepository.findAll().forEach(u -> {
+                if (oldHash.equals(u.getPasswordHash()) || u.getPasswordHash() == null || !u.getPasswordHash().startsWith("$2a$")) {
+                    u.setPasswordHash(passwordEncoder.encode("Demo@12345678"));
+                    userRepository.save(u);
+                    log.info("Updated password hash for user: {}", u.getEmail());
+                }
+            });
             log.info("Database already seeded. Skipping...");
             return;
         }
