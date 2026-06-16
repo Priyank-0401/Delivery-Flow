@@ -5,13 +5,14 @@ import com.deliveryflow.sprint.dto.SprintResponse;
 import com.deliveryflow.sprint.service.SprintService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/sprints")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/v1/sprints")
 public class SprintController {
 
     private final SprintService sprintService;
@@ -36,7 +37,8 @@ public class SprintController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public SprintResponse createSprint(@RequestBody CreateSprintRequest request) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'PMO', 'MANAGER')")
+    public SprintResponse createSprint(@Valid @RequestBody CreateSprintRequest request) {
         return sprintService.createSprint(request);
     }
 }

@@ -1,5 +1,6 @@
 package com.deliveryflow.task.service;
 
+import com.deliveryflow.common.exception.ResourceNotFoundException;
 import com.deliveryflow.task.dto.CreateTaskRequest;
 import com.deliveryflow.task.dto.TaskResponse;
 import com.deliveryflow.task.entity.Task;
@@ -44,7 +45,7 @@ public class TaskService {
 
     public TaskResponse getTaskById(String id) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Task", id));
         return TaskMapper.toResponse(task);
     }
 

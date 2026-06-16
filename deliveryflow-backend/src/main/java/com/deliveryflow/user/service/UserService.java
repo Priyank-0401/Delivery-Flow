@@ -1,5 +1,6 @@
 package com.deliveryflow.user.service;
 
+import com.deliveryflow.common.exception.ResourceNotFoundException;
 import com.deliveryflow.user.dto.CreateUserRequest;
 import com.deliveryflow.user.dto.UserResponse;
 import com.deliveryflow.user.entity.User;
@@ -30,7 +31,7 @@ public class UserService {
 
     public UserResponse getUserById(String id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User", id));
         return UserMapper.toResponse(user);
     }
 

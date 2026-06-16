@@ -1,5 +1,6 @@
 package com.deliveryflow.sprint.service;
 
+import com.deliveryflow.common.exception.ResourceNotFoundException;
 import com.deliveryflow.sprint.dto.CreateSprintRequest;
 import com.deliveryflow.sprint.dto.SprintResponse;
 import com.deliveryflow.sprint.entity.Sprint;
@@ -37,7 +38,7 @@ public class SprintService {
 
     public SprintResponse getSprintById(String id) {
         Sprint sprint = sprintRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Sprint not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Sprint", id));
         return SprintMapper.toResponse(sprint);
     }
 

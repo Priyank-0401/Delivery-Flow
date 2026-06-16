@@ -7,13 +7,14 @@ import com.deliveryflow.team.entity.TeamMember;
 import com.deliveryflow.team.service.TeamService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/teams")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/v1/teams")
 public class TeamController {
 
     private final TeamService teamService;
@@ -35,13 +36,15 @@ public class TeamController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TeamResponse createTeam(@RequestBody CreateTeamRequest request) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'PMO')")
+    public TeamResponse createTeam(@Valid @RequestBody CreateTeamRequest request) {
         return teamService.createTeam(request);
     }
 
     @PostMapping("/{teamId}/members")
     @ResponseStatus(HttpStatus.CREATED)
-    public TeamMember addMember(@PathVariable String teamId, @RequestBody AddMemberRequest request) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'PMO')")
+    public TeamMember addMember(@PathVariable String teamId, @Valid @RequestBody AddMemberRequest request) {
         return teamService.addMember(teamId, request);
     }
 
@@ -52,6 +55,7 @@ public class TeamController {
 
     @DeleteMapping("/{teamId}/members/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAnyRole('ADMIN', 'PMO')")
     public void removeMember(@PathVariable String teamId, @PathVariable String userId) {
         teamService.removeMember(teamId, userId);
     }

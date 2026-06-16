@@ -1,50 +1,58 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# DeliveryFlow Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Modular Monolith Architecture
+DeliveryFlow follows a modular monolith pattern with clear package boundaries. Each domain module (auth, project, task, sprint, team, analytics, graph, health, ai) is self-contained with its own entity, repository, service, controller, and DTO layers. Cross-module communication happens through service interfaces, never direct repository access. This enables future microservice extraction without refactoring.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Security-First Development
+Every API endpoint MUST be secured by default. JWT-based authentication with Spring Security filter chains is mandatory. Role-Based Access Control (RBAC) with roles ADMIN, PMO, MANAGER, MEMBER enforces authorization. All endpoints require Bearer token authentication except explicitly whitelisted public endpoints (/api/v1/auth/login, /api/v1/auth/register, /health). CORS must use explicit origin allowlists, never wildcards.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Test-Driven Quality
+Testing is mandatory for all business logic and API endpoints. Unit tests (JUnit 5 + Mockito) cover service logic. Integration tests (Testcontainers) cover API contracts and database interactions. Target: >80% line coverage on business logic packages. Tests MUST pass before any merge to main.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. API Design Standards
+All APIs follow RESTful conventions with versioned paths (/api/v1/). Request/response DTOs are strictly separated from entities. All inputs are validated with Bean Validation (@Valid, @NotBlank, etc.). All responses use standardized error format: { "status", "message", "timestamp", "errors" }. Pagination follows cursor-based or offset patterns consistently.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Database Integrity
+PostgreSQL is the primary relational store. All schema changes go through Flyway migrations (never ddl-auto). Every table includes: id (UUID), created_at, updated_at. Soft deletes (deleted_at) are used universally. Audit columns (created_by, updated_by) are present on all mutable tables. Optimistic locking (@Version) is used for concurrent writes.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### VI. Observability & Logging
+Structured JSON logging via SLF4J/Logback. Every request gets a correlation ID (X-Request-Id header). Spring Actuator exposes health, readiness, and liveness endpoints. All security events (login, logout, access denied, token refresh) are logged to the audit trail.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### VII. Clean Code Standards
+Lombok is used for boilerplate reduction but not for critical logic. DTOs use record types where possible. Services follow single-responsibility principle. Controllers contain zero business logic — they delegate entirely to services. Package structure: {module}/controller, {module}/service, {module}/repository, {module}/entity, {module}/dto, {module}/mapper.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Technology Stack
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- **Backend**: Java 21, Spring Boot 3.3, Spring Security 6, Spring Data JPA
+- **Database**: PostgreSQL 15 (primary), Neo4j 5 (graph engine), Redis (caching/sessions)
+- **Build**: Gradle 8.8
+- **Frontend**: React 19, TypeScript, Vite 8, TailwindCSS 3, TanStack Query
+- **Testing**: JUnit 5, Mockito, Testcontainers, Spring Boot Test
+- **API Docs**: SpringDoc OpenAPI 3 (Swagger UI)
+- **Migrations**: Flyway
+
+## Security Standards
+
+- JWT access tokens expire after 60 minutes
+- Refresh tokens stored in HTTP-only, Secure, SameSite cookies
+- Password hashing: BCrypt with strength 12
+- All API responses exclude stack traces in production
+- Rate limiting on auth endpoints (max 5 attempts per minute)
+- OWASP Top 10 mitigations enforced
+
+## Development Workflow
+
+1. Feature branches from main
+2. Spec-driven development via GitHub Spec (Specify)
+3. All changes require passing CI (build + test + lint)
+4. Code follows the established package conventions
+5. Database changes require Flyway migration scripts
+6. API changes require OpenAPI documentation updates
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes all ad-hoc decisions. Amendments require documentation and rationale. All code reviews must verify compliance with these principles.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-06-16 | **Last Amended**: 2026-06-16
