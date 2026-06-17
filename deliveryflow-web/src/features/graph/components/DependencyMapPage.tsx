@@ -11,17 +11,15 @@ import type { Node } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 import { graphService } from '../api/graph';
-import { AlertCircle, Play, Info, X, ShieldAlert, Clock, BarChart4 } from 'lucide-react';
+import { AlertCircle, ShieldAlert, Clock, BarChart4, Inspect, Network, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useProjectStore } from '@/store/useProjectStore';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 
 export function DependencyMapPage() {
   const { selectedProjectId } = useProjectStore();
   const [selectedNodeData, setSelectedNodeData] = useState<any | null>(null);
 
-  // (Projects fetch moved to global layout)
-
-  // 2. Fetch Graph Data
   const {
     data: graphData,
     isLoading: loadingGraph,
@@ -32,18 +30,15 @@ export function DependencyMapPage() {
     enabled: !!selectedProjectId,
   });
 
-  // 3. Fetch Critical Path
   const { data: criticalPath, isLoading: loadingPath } = useQuery({
     queryKey: ['criticalPath', selectedProjectId],
     queryFn: () => graphService.getCriticalPath(selectedProjectId),
     enabled: !!selectedProjectId,
   });
 
-  // ReactFlow state management
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-  // BFS DAG layout algorithm
   const layoutPositions = useMemo(() => {
     if (!graphData || !graphData.nodes) return {};
 
@@ -83,14 +78,12 @@ export function DependencyMapPage() {
       });
     }
 
-    // Handle any circular/disconnected nodes fallback
     nodes.forEach((n) => {
       if (levels[n.id] === undefined) {
         levels[n.id] = 0;
       }
     });
 
-    // Group by level
     const groups: Record<number, string[]> = {};
     nodes.forEach((n) => {
       const l = levels[n.id];
@@ -105,8 +98,7 @@ export function DependencyMapPage() {
       const lvl = parseInt(lStr, 10);
       const groupNodes = groups[lvl];
       groupNodes.forEach((id, index) => {
-        // Distribute vertically centered around y=250
-        const spacing = 160;
+        const spacing = 180;
         const totalHeight = (groupNodes.length - 1) * spacing;
         const y = 250 + (index * spacing - totalHeight / 2);
         const x = lvl * 320 + 100;
@@ -117,7 +109,6 @@ export function DependencyMapPage() {
     return positions;
   }, [graphData]);
 
-  // Synchronize layout positions to ReactFlow nodes & edges
   useEffect(() => {
     if (!graphData) return;
 
@@ -128,6 +119,11 @@ export function DependencyMapPage() {
       const isCritical = criticalNodeIds.has(n.id);
       const isBlocked = n.status === 'BLOCKED';
 
+      const statusColor = 
+        n.status === 'DONE' ? 'text-emerald-600' :
+        n.status === 'IN_PROGRESS' ? 'text-blue-600' :
+        n.status === 'BLOCKED' ? 'text-red-600' : 'text-zinc-600';
+
       return {
         id: n.id,
         position: pos,
@@ -135,51 +131,34 @@ export function DependencyMapPage() {
           ...n,
           isCritical,
           label: (
-            <div className="flex flex-col items-start text-xs p-2">
-              <div className="flex items-center justify-between w-full mb-1">
-                <span className="font-mono text-[10px] text-zinc-400 font-bold uppercase tracking-widest">
+            <div className="flex flex-col w-full h-full justify-between p-1 bg-white">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-semibold text-[10px] text-zinc-500 uppercase tracking-widest bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200">
                   {n.taskKey || 'NO-KEY'}
                 </span>
                 {isBlocked && (
-                  <span className="flex h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse" />
+                  <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse" />
                 )}
               </div>
-              <span className="font-bold text-white text-left line-clamp-2 mb-2 text-sm leading-tight">
+              <span className="font-bold text-zinc-900 text-left line-clamp-2 text-sm leading-tight mb-4">
                 {n.label}
               </span>
-              <div className="flex items-center justify-between w-full mt-auto">
-                <span
-                  className={`px-1.5 py-0.5 rounded-[4px] font-bold text-[9px] uppercase tracking-wider ${
-                    n.status === 'DONE'
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      : n.status === 'IN_PROGRESS'
-                      ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                      : n.status === 'BLOCKED'
-                      ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                      : 'bg-zinc-800 text-zinc-400 border border-zinc-700/50'
-                  }`}
-                >
-                  {n.status || 'TODO'}
-                </span>
-                {n.estimatedHours && (
-                  <span className="text-zinc-500 font-mono text-[10px] font-bold">
-                    {n.estimatedHours}h
-                  </span>
-                )}
+              <div className="flex flex-col gap-1.5 text-xs">
+                <div className="flex justify-between items-center border-t border-zinc-100 pt-2">
+                  <span className="text-zinc-500 font-medium">Status</span>
+                  <span className={`font-bold ${statusColor}`}>{n.status || 'TODO'}</span>
+                </div>
               </div>
             </div>
           ),
         },
         style: {
-          background: isCritical ? '#181212' : '#131720',
-          color: '#e4e4e7',
-          border: isCritical ? '2px solid #ef4444' : '1px solid #27272a',
+          background: '#ffffff',
+          border: isCritical ? '2px solid #ef4444' : '1px solid #e4e4e7',
           borderRadius: '12px',
           width: 220,
-          height: 90,
-          boxShadow: isCritical
-            ? '0 0 20px rgba(239, 68, 68, 0.25)'
-            : '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+          padding: '12px',
+          boxShadow: isCritical ? '0 4px 12px rgba(239, 68, 68, 0.15)' : '0 2px 4px rgba(0,0,0,0.05)',
           cursor: 'pointer',
         },
       };
@@ -194,12 +173,12 @@ export function DependencyMapPage() {
         target: e.target,
         animated: isCritical,
         style: {
-          stroke: isCritical ? '#ef4444' : '#3f3f46',
-          strokeWidth: isCritical ? 3 : 1.5,
+          stroke: isCritical ? '#ef4444' : '#a1a1aa', // darker line than original
+          strokeWidth: isCritical ? 2.5 : 1.5,
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: isCritical ? '#ef4444' : '#3f3f46',
+          color: isCritical ? '#ef4444' : '#a1a1aa',
         },
       };
     });
@@ -208,76 +187,138 @@ export function DependencyMapPage() {
     setEdges(flowEdges);
   }, [graphData, criticalPath, layoutPositions, setNodes, setEdges]);
 
-
-
   const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
     setSelectedNodeData(node.data);
   }, []);
 
-  return (
-    <div className="flex flex-col h-[calc(100vh-80px)] space-y-6 relative">
-      {/* Header Controls */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex-1">
-          <h2 className="text-3xl font-black tracking-tight text-white uppercase">Delivery Network</h2>
-          <p className="text-zinc-400 font-medium tracking-wide mt-1 uppercase text-xs">Analyze critical path and blockages.</p>
+  if (!selectedProjectId) {
+    return (
+      <div className="flex flex-col h-full space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-black tracking-tight text-zinc-900">Delivery Network</h2>
+            <p className="text-zinc-500 font-medium tracking-wide mt-1 text-sm">Analyze critical path and task relationships.</p>
+          </div>
         </div>
-        <div className="flex gap-4 items-center">
+        <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-zinc-200 rounded-2xl bg-zinc-50 h-[calc(100vh-200px)]">
+          <span className="text-zinc-500 font-semibold mb-3">No project selected.</span>
+          <p className="text-zinc-400 text-sm">Select a project from the command palette to view its dependency graph.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full space-y-4">
+      {/* Header and Toolbar */}
+      <div className="flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white border border-zinc-200 rounded-xl shadow-sm">
+              <Network className="w-5 h-5 text-zinc-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-zinc-900 leading-none">Dependency Map</h2>
+              <p className="text-zinc-500 font-medium mt-1 text-xs">Interactive critical path visualization</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          {criticalPath && (
+            <div className="flex items-center gap-4 text-xs bg-white px-4 py-2 rounded-lg border border-zinc-200 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-zinc-500 font-semibold uppercase tracking-widest">Critical Path</span>
+                <span className="text-zinc-900 font-bold">{criticalPath.criticalPathTaskIds.length} Nodes</span>
+              </div>
+              <div className="h-4 w-px bg-zinc-200"></div>
+              <div className="flex items-center gap-2">
+                <span className="text-zinc-500 font-semibold uppercase tracking-widest">Duration</span>
+                <span className="text-zinc-900 font-bold">{criticalPath.projectDuration}h</span>
+              </div>
+            </div>
+          )}
           <Button 
-            className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold tracking-wide"
+            variant="outline"
+            className="bg-white border-zinc-200 text-zinc-900 font-semibold shadow-sm text-sm h-9"
             onClick={() => window.location.reload()}
           >
-            ↻ Refresh Layout
+            Reset Layout
           </Button>
         </div>
       </div>
 
-      {/* Info Stats Bar */}
-      {criticalPath && (
-        <div className="flex items-center gap-6 text-sm">
-          <div className="flex items-center gap-2">
-            <Info className="w-5 h-5 text-zinc-500" />
-            <span className="text-zinc-400 font-semibold uppercase tracking-wider text-xs">Critical Sequence:</span>
-            <span className="text-white font-bold text-lg">{criticalPath.criticalPathTaskIds.length} Tasks</span>
+      {/* Main Workspace: 15/65/20 Layout Simulation (15 is the sidebar outside this component) */}
+      {/* We are the 85% area, so we split it into Left Panel (280px) / Graph / Inspector Panel (340px) */}
+      <div className="flex-1 flex overflow-hidden border border-zinc-200 rounded-2xl shadow-sm bg-white">
+        
+        {/* Navigator Panel (Left Sidebar) */}
+        <div className="w-[280px] border-r border-zinc-200 bg-white flex flex-col flex-shrink-0 relative z-10">
+          <div className="p-4 border-b border-zinc-100 bg-zinc-50/50 flex items-center gap-2">
+            <Search className="w-4 h-4 text-zinc-400" />
+            <h3 className="font-bold text-sm text-zinc-900">Map Layers & Filters</h3>
           </div>
-          <div className="h-4 w-px bg-zinc-800"></div>
-          <div className="flex items-center gap-2">
-            <Play className="w-5 h-5 text-blue-500" />
-            <span className="text-zinc-400 font-semibold uppercase tracking-wider text-xs">Project Duration:</span>
-            <span className="text-white font-bold text-lg">{criticalPath.projectDuration} Hours</span>
-          </div>
-          <div className="h-4 w-px bg-zinc-800"></div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]"></span>
-            <span className="text-zinc-400 font-semibold uppercase tracking-wider text-xs">Bottleneck Tasks:</span>
-            <span className="text-red-400 font-black tracking-widest text-lg">
-              {criticalPath.tasks.filter((t) => t.isCritical).map((t) => t.taskKey).join(', ') || 'NONE'}
-            </span>
+          <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
+            <div className="space-y-3">
+              <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Highlight Paths</h4>
+              <label className="flex items-center gap-3 p-2 hover:bg-zinc-50 rounded-lg cursor-pointer transition-colors">
+                <input type="checkbox" className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-600" defaultChecked />
+                <span className="text-sm font-semibold text-zinc-700">Critical Path</span>
+              </label>
+              <label className="flex items-center gap-3 p-2 hover:bg-zinc-50 rounded-lg cursor-pointer transition-colors">
+                <input type="checkbox" className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-600" defaultChecked={false} />
+                <span className="text-sm font-semibold text-zinc-700">Blocked Chains</span>
+              </label>
+            </div>
+
+            <div className="space-y-3 border-t border-zinc-100 pt-6">
+              <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Filter by Team</h4>
+              <label className="flex items-center gap-3 p-2 hover:bg-zinc-50 rounded-lg cursor-pointer transition-colors">
+                <input type="checkbox" className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-600" defaultChecked />
+                <span className="text-sm font-semibold text-zinc-700">Backend</span>
+              </label>
+              <label className="flex items-center gap-3 p-2 hover:bg-zinc-50 rounded-lg cursor-pointer transition-colors">
+                <input type="checkbox" className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-600" defaultChecked />
+                <span className="text-sm font-semibold text-zinc-700">Frontend</span>
+              </label>
+              <label className="flex items-center gap-3 p-2 hover:bg-zinc-50 rounded-lg cursor-pointer transition-colors">
+                <input type="checkbox" className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-600" defaultChecked />
+                <span className="text-sm font-semibold text-zinc-700">Mobile</span>
+              </label>
+            </div>
+            
+            <div className="space-y-3 border-t border-zinc-100 pt-6">
+              <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Node Types</h4>
+              <label className="flex items-center gap-3 p-2 hover:bg-zinc-50 rounded-lg cursor-pointer transition-colors">
+                <input type="checkbox" className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-600" defaultChecked />
+                <span className="text-sm font-semibold text-zinc-700">Tasks</span>
+              </label>
+              <label className="flex items-center gap-3 p-2 hover:bg-zinc-50 rounded-lg cursor-pointer transition-colors">
+                <input type="checkbox" className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-600" defaultChecked />
+                <span className="text-sm font-semibold text-zinc-700">Milestones</span>
+              </label>
+            </div>
           </div>
         </div>
-      )}
-
-      {/* Graph Visual Canvas & Side Panel Container */}
-      <div className="flex-1 w-full flex relative overflow-hidden bg-[#0a0a0a] border border-zinc-800/80 rounded-xl shadow-2xl">
         
-        {/* Main Graph Area */}
-        <div className={`flex-1 relative transition-all duration-300 ${selectedNodeData ? 'mr-96' : ''}`}>
+        {/* Graph Area */}
+        <div className="flex-1 relative bg-[#FAFAFA]">
           {loadingGraph || loadingPath ? (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : graphError ? (
-            <div className="p-8">
-              <div className="bg-red-500/10 border border-red-500/30 p-6 rounded-xl flex items-start gap-4">
+            <div className="absolute inset-0 flex items-center justify-center p-8">
+              <div className="bg-red-50 border border-red-100 p-6 rounded-xl flex items-start gap-4">
                 <AlertCircle className="h-6 w-6 text-red-500 shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="text-lg font-bold text-white mb-1">Connection Error</h3>
-                  <p className="text-red-200">Failed to connect to the Neo4j intelligence layer.</p>
+                  <h3 className="text-lg font-bold text-red-900 mb-1">Graph Connection Error</h3>
+                  <p className="text-sm text-red-700">Failed to load relationship data.</p>
                 </div>
               </div>
             </div>
           ) : !nodes || nodes.length === 0 ? (
-            <div className="absolute inset-0 flex items-center justify-center text-zinc-500 font-bold tracking-widest uppercase">
+            <div className="absolute inset-0 flex items-center justify-center text-zinc-500 font-medium">
               No tasks or relationships found
             </div>
           ) : (
@@ -291,97 +332,96 @@ export function DependencyMapPage() {
               minZoom={0.1}
               maxZoom={1.5}
             >
-              <Background color="#27272a" gap={20} size={1} />
-              <Controls className="bg-[#131720] border border-zinc-800 rounded-lg text-white shadow-xl" />
+              <Background color="#e4e4e7" gap={20} size={1} />
+              <Controls className="bg-white border border-zinc-200 rounded-lg text-zinc-900 shadow-sm" showInteractive={false} />
             </ReactFlow>
           )}
         </div>
 
-        {/* Side Detail Panel */}
-        <div 
-          className={`absolute top-0 right-0 h-full w-96 bg-[#131720] border-l border-zinc-800/80 shadow-2xl transform transition-transform duration-300 z-10 flex flex-col ${
-            selectedNodeData ? 'translate-x-0' : 'translate-x-full'
-          }`}
-        >
-          {selectedNodeData && (
-            <>
-              {/* Drawer Header */}
-              <div className="flex items-center justify-between p-6 border-b border-zinc-800/50">
-                <div className="flex items-center gap-3">
-                  <h3 className="font-mono text-sm font-bold text-zinc-400 uppercase tracking-widest">{selectedNodeData.taskKey}</h3>
+        {/* Inspector Panel (Permanent Right Sidebar) */}
+        <div className="w-[340px] xl:w-[400px] border-l border-zinc-200 bg-white flex flex-col flex-shrink-0 relative z-10">
+          <div className="p-4 border-b border-zinc-100 bg-zinc-50/50 flex items-center gap-2">
+            <Search className="w-4 h-4 text-zinc-400" />
+            <h3 className="font-bold text-sm text-zinc-900">Node Inspector</h3>
+          </div>
+          
+          {selectedNodeData ? (
+            <div className="flex-1 overflow-y-auto p-5 space-y-8 custom-scrollbar">
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="font-mono text-zinc-500 font-semibold text-xs px-2 py-1 bg-zinc-100 rounded border border-zinc-200">
+                    {selectedNodeData.taskKey}
+                  </span>
                   {selectedNodeData.isCritical && (
-                    <span className="px-2 py-0.5 bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-black uppercase tracking-widest rounded-sm">
+                    <span className="px-2 py-1 bg-red-50 text-red-600 border border-red-100 text-[10px] font-bold uppercase tracking-widest rounded">
                       Critical Path
                     </span>
                   )}
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setSelectedNodeData(null)} className="h-8 w-8 text-zinc-400 hover:text-white">
-                  <X className="h-4 w-4" />
-                </Button>
+                <h2 className="text-lg font-bold text-zinc-900 leading-tight mb-4">{selectedNodeData.label}</h2>
+                <StatusBadge 
+                  status={selectedNodeData.status === 'BLOCKED' ? 'danger' : selectedNodeData.status === 'DONE' ? 'success' : selectedNodeData.status === 'IN_PROGRESS' ? 'info' : 'neutral'} 
+                  label={selectedNodeData.status || 'TODO'} 
+                  showIcon
+                />
               </div>
 
-              {/* Drawer Body */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                
-                <div>
-                  <h2 className="text-xl font-bold text-white leading-tight mb-4">{selectedNodeData.label}</h2>
-                  <div className="flex items-center gap-3">
-                    <span className={`px-2.5 py-1 rounded-sm font-bold text-xs uppercase tracking-wider ${
-                      selectedNodeData.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-400' : 
-                      selectedNodeData.status === 'IN_PROGRESS' ? 'bg-blue-500/10 text-blue-400' :
-                      selectedNodeData.status === 'BLOCKED' ? 'bg-red-500/10 text-red-500' :
-                      'bg-zinc-800 text-zinc-400'
-                    }`}>
-                      {selectedNodeData.status || 'TODO'}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-zinc-50 border border-zinc-200 p-3 rounded-xl">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1.5 mb-1">
+                    <Clock className="w-3 h-3" /> Est. Hours
+                  </span>
+                  <span className="text-lg font-black text-zinc-900">{selectedNodeData.estimatedHours || 0}</span>
+                </div>
+                <div className="bg-zinc-50 border border-zinc-200 p-3 rounded-xl">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1.5 mb-1">
+                    <BarChart4 className="w-3 h-3" /> Story Points
+                  </span>
+                  <span className="text-lg font-black text-zinc-900">{selectedNodeData.storyPoints || 0}</span>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3">Health Impact</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-sm border-b border-zinc-100 pb-2">
+                    <span className="text-zinc-600 font-medium">Schedule Risk</span>
+                    <span className={selectedNodeData.status === 'BLOCKED' ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold'}>
+                      {selectedNodeData.status === 'BLOCKED' ? 'High' : 'Low'}
                     </span>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-[#0B0E14] border border-zinc-800/50 p-4 rounded-xl">
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5 mb-1"><Clock className="w-3 h-3" /> Est. Hours</span>
-                    <span className="text-xl font-black text-white">{selectedNodeData.estimatedHours || 0}</span>
-                  </div>
-                  <div className="bg-[#0B0E14] border border-zinc-800/50 p-4 rounded-xl">
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5 mb-1"><BarChart4 className="w-3 h-3" /> Story Points</span>
-                    <span className="text-xl font-black text-white">{selectedNodeData.storyPoints || 0}</span>
+                  <div className="flex justify-between items-center text-sm border-b border-zinc-100 pb-2">
+                    <span className="text-zinc-600 font-medium">Downstream Impact</span>
+                    <span className="text-amber-600 font-bold">Medium</span>
                   </div>
                 </div>
-
-                <div>
-                  <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Health Impact</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-zinc-300 font-medium">Schedule Risk</span>
-                      <span className={selectedNodeData.status === 'BLOCKED' ? 'text-red-400 font-bold' : 'text-emerald-400 font-bold'}>
-                        {selectedNodeData.status === 'BLOCKED' ? 'High' : 'Low'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-zinc-300 font-medium">Downstream Impact</span>
-                      <span className="text-amber-400 font-bold">
-                        Medium
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {selectedNodeData.isCritical && selectedNodeData.status === 'BLOCKED' && (
-                  <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl mt-8">
-                    <div className="flex items-center gap-2 text-red-400 mb-2">
-                      <ShieldAlert className="w-4 h-4" />
-                      <span className="text-xs font-bold uppercase tracking-widest">Active Blocker</span>
-                    </div>
-                    <p className="text-sm text-red-200/80 leading-relaxed">
-                      This task is actively blocking the critical path. Every hour this remains blocked translates to a 1:1 delay in the final project delivery date.
-                    </p>
-                  </div>
-                )}
               </div>
-            </>
+
+              {selectedNodeData.isCritical && selectedNodeData.status === 'BLOCKED' && (
+                <div className="bg-red-50 border border-red-200 p-4 rounded-xl">
+                  <div className="flex items-center gap-2 text-red-600 mb-2">
+                    <ShieldAlert className="w-4 h-4" />
+                    <span className="text-xs font-bold uppercase tracking-widest">Active Blocker</span>
+                  </div>
+                  <p className="text-xs text-red-800 leading-relaxed font-medium">
+                    This task is actively blocking the critical path. Every hour this remains blocked translates to a 1:1 delay in the final project delivery date.
+                  </p>
+                  <Button variant="outline" className="w-full mt-3 bg-white border-red-200 text-red-700 hover:bg-red-50 shadow-sm text-xs font-bold h-8">
+                    Escalate Blocker
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-zinc-50/50">
+              <div className="p-4 bg-white border border-zinc-200 rounded-full mb-4 shadow-sm">
+                <Inspect className="w-8 h-8 text-zinc-300" />
+              </div>
+              <h3 className="text-sm font-bold text-zinc-900 mb-1">No Node Selected</h3>
+              <p className="text-xs text-zinc-500 font-medium">Click on any node in the dependency graph to inspect its details and metrics.</p>
+            </div>
           )}
         </div>
-
       </div>
     </div>
   );

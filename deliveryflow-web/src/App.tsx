@@ -12,6 +12,7 @@ import { SprintListPage } from './features/sprints/components/SprintListPage';
 import { TaskListPage } from '@/features/tasks/components/TaskListPage';
 import { DependencyMapPage } from '@/features/graph/components/DependencyMapPage';
 import { ProjectHealthDashboard } from '@/features/health/components/ProjectHealthDashboard';
+import { DesignSystemPage } from '@/features/design-system/DesignSystemPage';
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
           <Route path="/teams" element={<TeamListPage />} />
           <Route path="/sprints" element={<SprintListPage />} />
           <Route path="/tasks" element={<TaskListPage />} />
+          <Route path="/design-system" element={<DesignSystemPage />} />
           
           <Route path="/settings" element={<SettingsLayout />}>
             <Route index element={<div className="p-12 text-center text-muted-foreground border border-dashed rounded-lg">Project Settings</div>} />

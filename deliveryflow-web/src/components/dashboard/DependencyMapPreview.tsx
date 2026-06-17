@@ -6,29 +6,29 @@ import 'reactflow/dist/style.css';
 const CustomNode = ({ data }: { data: { id: string; label: string; status: 'success' | 'warning' | 'critical' | 'external' } }) => {
   const getBorderColor = () => {
     switch (data.status) {
-      case 'success': return 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]';
-      case 'warning': return 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]';
-      case 'critical': return 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]';
-      case 'external': return 'border-purple-500 shadow-[0_0_15px_rgba(139,92,246,0.2)]';
+      case 'success': return 'border-zinc-200 shadow-[0_2px_4px_rgba(0,0,0,0.05)]';
+      case 'warning': return 'border-amber-200 shadow-[0_4px_12px_rgba(245,158,11,0.15)]';
+      case 'critical': return 'border-red-500 border-2 shadow-[0_4px_12px_rgba(239,68,68,0.15)]';
+      case 'external': return 'border-purple-200 shadow-[0_2px_4px_rgba(139,92,246,0.1)]';
     }
   };
 
   const getBadgeColor = () => {
     switch (data.status) {
-      case 'success': return 'bg-emerald-500/10 text-emerald-400';
-      case 'warning': return 'bg-amber-500/10 text-amber-400';
-      case 'critical': return 'bg-red-500/10 text-red-400';
-      case 'external': return 'bg-purple-500/10 text-purple-400';
+      case 'success': return 'bg-emerald-50 text-emerald-600 border border-emerald-100';
+      case 'warning': return 'bg-amber-50 text-amber-600 border border-amber-100';
+      case 'critical': return 'bg-red-50 text-red-600 border border-red-100';
+      case 'external': return 'bg-purple-50 text-purple-600 border border-purple-100';
     }
   };
 
   return (
-    <div className={`px-4 py-3 rounded-lg bg-zinc-950 border-t-2 border-l border-r border-b border-zinc-800 ${getBorderColor()} min-w-[180px]`}>
+    <div className={`px-4 py-3 rounded-xl bg-white border ${getBorderColor()} min-w-[180px]`}>
       <div className="flex flex-col gap-1">
-        <div className={`text-[10px] font-bold px-1.5 py-0.5 rounded w-max ${getBadgeColor()}`}>
+        <div className={`text-[10px] font-bold px-1.5 py-0.5 rounded w-max uppercase tracking-widest ${getBadgeColor()}`}>
           {data.id}
         </div>
-        <div className="text-xs font-semibold text-zinc-200 mt-1">{data.label}</div>
+        <div className="text-sm font-bold text-zinc-900 mt-1">{data.label}</div>
       </div>
     </div>
   );
@@ -54,10 +54,10 @@ export function DependencyMapPreview() {
   const defaultEdgeOptions = {
     type: 'smoothstep',
     animated: true,
-    style: { stroke: '#52525b', strokeWidth: 2 },
+    style: { stroke: '#a1a1aa', strokeWidth: 1.5 },
     markerEnd: {
       type: MarkerType.ArrowClosed,
-      color: '#52525b',
+      color: '#a1a1aa',
     },
   };
 
@@ -80,7 +80,7 @@ export function DependencyMapPreview() {
 
   return (
     <div className="w-full h-full relative" style={{ minHeight: '350px' }}>
-      <div className="absolute top-0 left-0 flex items-center gap-4 z-10 text-xs font-medium bg-[#0B0E14]/80 px-3 py-1.5 rounded-full border border-zinc-800">
+      <div className="absolute top-0 left-0 flex items-center gap-4 z-10 text-[10px] font-bold uppercase tracking-widest bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-md border border-zinc-200 shadow-sm">
         <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> On Track</div>
         <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-500"></div> At Risk</div>
         <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-500"></div> Blocked</div>
@@ -92,12 +92,12 @@ export function DependencyMapPreview() {
         nodeTypes={nodeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         fitView
-        className="bg-transparent"
+        className="bg-zinc-50"
         minZoom={0.5}
         maxZoom={1.5}
       >
-        <Background color="#27272a" gap={16} size={1} />
-        <Controls showInteractive={false} className="bg-zinc-900 border-zinc-800 fill-zinc-400" />
+        <Background color="#e4e4e7" gap={16} size={1} />
+        <Controls showInteractive={false} className="bg-white border-zinc-200 text-zinc-900 shadow-sm" />
       </ReactFlow>
     </div>
   );

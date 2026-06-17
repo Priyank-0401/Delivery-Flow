@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, Navigate } from "react-router-dom";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useQuery } from '@tanstack/react-query';
@@ -11,26 +11,40 @@ import {
   Settings, 
   ChevronLeft,
   Bell,
-  Search,
-  Calendar,
-  Filter,
-  Star,
-  CheckCircle2,
   Briefcase,
   CheckSquare,
   Timer,
   Users,
-  Workflow
+  Workflow,
+  ShieldAlert,
+  Sparkles,
+  Palette,
+  FolderOpen,
+  Search
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CommandPalette } from '@/components/ui/CommandPalette';
+import { EntitySelector } from '@/components/ui/EntitySelector';
+import { NotificationDrawer } from '@/components/ui/NotificationDrawer';
 
 export function DashboardLayout() {
   const token = useAuthStore(state => state.token);
   const location = useLocation();
+  const [isCommandOpen, setIsCommandOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   
   const { selectedProjectId, setSelectedProjectId } = useProjectStore();
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setIsCommandOpen((open) => !open);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   const { data: projects, isLoading } = useQuery({
     queryKey: ['projects'],
@@ -44,14 +58,6 @@ export function DashboardLayout() {
     }
   }, [projects, selectedProjectId, setSelectedProjectId]);
   
-  const currentProject = projects?.find(p => p.id === selectedProjectId) || (projects && projects.length > 0 ? projects[0] : null);
-  const projectName = currentProject?.name || 'Loading Portfolio...';
-  
-  const pathSegments = location.pathname.split('/').filter(Boolean);
-  const currentRouteName = pathSegments.length > 0 
-    ? pathSegments[0].charAt(0).toUpperCase() + pathSegments[0].slice(1) 
-    : 'Overview';
-
   if (!token) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -59,42 +65,34 @@ export function DashboardLayout() {
   const getLinkClass = (path: string) => {
     const isActive = location.pathname.startsWith(path) || (path === '/dashboard' && location.pathname === '/');
     return isActive
-      ? "flex items-center gap-3 rounded-md bg-zinc-800 text-primary px-3 py-2 text-sm font-bold transition-colors border-l-2 border-primary"
-      : "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-semibold text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors border-l-2 border-transparent";
+      ? "flex items-center gap-3 rounded-r-md bg-zinc-100 text-zinc-900 px-3 py-2 text-sm font-bold transition-colors border-l-4 border-indigo-600"
+      : "flex items-center gap-3 rounded-r-md px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition-colors border-l-4 border-transparent ml-1";
   };
 
   const SectionTitle = ({ title }: { title: string }) => (
-    <div className="px-3 mb-2 mt-6 text-[11px] font-bold tracking-widest text-zinc-400 uppercase">
+    <div className="px-3 mb-1 mt-6 text-xs font-semibold text-zinc-400">
       {title}
     </div>
   );
 
   return (
-    <div className="grid min-h-screen w-full grid-cols-[260px_1fr] bg-background">
+    <div className="flex h-screen w-full bg-zinc-50 overflow-hidden font-sans">
       {/* Sidebar */}
-      <div className="flex flex-col border-r border-zinc-800/80 bg-[#0B0E14] py-6 overflow-y-auto custom-scrollbar shadow-2xl z-20 relative">
+      <div className="w-[220px] flex-shrink-0 flex flex-col border-r border-zinc-200 bg-zinc-50/50 py-6 overflow-y-auto z-20">
         <div className="flex items-center gap-3 px-6 mb-8">
-          <div className="h-8 w-8 rounded-lg bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
-            <Workflow className="h-5 w-5 text-indigo-400" />
+          <div className="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center border border-indigo-100">
+            <Workflow className="h-4 w-4 text-indigo-600" />
           </div>
-          <span className="text-xl font-black tracking-tight text-white uppercase">DeliveryFlow</span>
+          <span className="text-lg font-bold tracking-tight text-zinc-900">DeliveryFlow</span>
         </div>
         
-        <nav className="flex flex-1 flex-col px-3 space-y-1">
-          <SectionTitle title="Intelligence" />
+        <nav className="flex flex-1 flex-col pr-3 space-y-0.5">
+          <SectionTitle title="Workspace" />
           <Link to="/dashboard" className={getLinkClass('/dashboard')}>
-            <LayoutDashboard className="h-4 w-4" />
-            Overview
-          </Link>
-          <Link to="/health" className={getLinkClass('/health')}>
-            <Activity className="h-4 w-4" /> Project Health
-          </Link>
-          <Link to="/dependencies" className={getLinkClass('/dependencies')}>
-            <Network className="h-4 w-4" /> Dependencies
+            <LayoutDashboard className="h-4 w-4" /> Overview
           </Link>
 
-          <div className="pt-4"></div>
-          <SectionTitle title="Administration" />
+          <SectionTitle title="Execution" />
           <Link to="/projects" className={getLinkClass('/projects')}>
             <Briefcase className="h-4 w-4" /> Projects
           </Link>
@@ -104,8 +102,29 @@ export function DashboardLayout() {
           <Link to="/tasks" className={getLinkClass('/tasks')}>
             <CheckSquare className="h-4 w-4" /> Tasks
           </Link>
+
+          <SectionTitle title="Intelligence" />
+          <Link to="/dependencies" className={getLinkClass('/dependencies')}>
+            <Network className="h-4 w-4" /> Dependencies
+          </Link>
+          <Link to="/health" className={getLinkClass('/health')}>
+            <Activity className="h-4 w-4" /> Health
+          </Link>
+          <Link to="#" className="flex items-center gap-3 rounded-r-md px-3 py-2 text-sm font-medium text-zinc-400 cursor-not-allowed border-l-4 border-transparent ml-1">
+            <ShieldAlert className="h-4 w-4" /> Risks
+          </Link>
           <Link to="/teams" className={getLinkClass('/teams')}>
-            <Users className="h-4 w-4" /> Teams
+            <Users className="h-4 w-4" /> Capacity
+          </Link>
+
+          <SectionTitle title="AI Assistant" />
+          <Link to="#" className="flex items-center gap-3 rounded-r-md px-3 py-2 text-sm font-medium text-zinc-400 cursor-not-allowed border-l-4 border-transparent ml-1">
+            <Sparkles className="h-4 w-4" /> AI Advisor
+          </Link>
+
+          <SectionTitle title="Administration" />
+          <Link to="/design-system" className={getLinkClass('/design-system')}>
+            <Palette className="h-4 w-4" /> Design System
           </Link>
         </nav>
 
@@ -114,7 +133,7 @@ export function DashboardLayout() {
             <Settings className="h-4 w-4" />
             Settings
           </Link>
-          <button className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
+          <button className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors">
             <ChevronLeft className="h-4 w-4" />
             Collapse
           </button>
@@ -122,98 +141,101 @@ export function DashboardLayout() {
       </div>
 
       {/* Main Area */}
-      <div className="flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Top Navigation */}
-        <header className="flex h-20 shrink-0 items-center justify-between border-b border-zinc-800/80 bg-[#131720] px-8 shadow-sm z-10 relative">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-3">
-              {/* Global Project Selector */}
-              {isLoading ? (
-                <div className="text-2xl font-black text-zinc-400 tracking-tight">Loading...</div>
-              ) : (
-                <div className="relative group">
-                  <select 
-                    value={selectedProjectId || ''} 
-                    onChange={(e) => setSelectedProjectId(e.target.value)}
-                    className="text-2xl font-black text-white tracking-tight bg-transparent appearance-none outline-none cursor-pointer pr-6 hover:text-indigo-100 transition-colors"
-                  >
-                    {projects?.map(p => (
-                      <option key={p.id} value={p.id} className="text-sm font-semibold bg-zinc-900 text-white">
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                  {/* Custom dropdown arrow to replace default */}
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400 group-hover:text-indigo-200">
-                    ▼
-                  </div>
-                </div>
-              )}
-              
-              <Star className="h-5 w-5 text-zinc-400 cursor-pointer hover:text-amber-400 transition-colors ml-2" />
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-widest ml-2 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-                <CheckCircle2 className="h-3 w-3" />
-                Active
-              </div>
-            </div>
+        <header className="h-16 flex-shrink-0 flex items-center justify-between border-b border-zinc-200 bg-white px-8 z-10">
+          
+          {/* Left: Breadcrumbs & Context Switcher */}
+          <div className="flex items-center gap-3">
+            <Link to="/projects" className="text-sm font-bold text-zinc-500 hover:text-zinc-900 transition-colors">Portfolio</Link>
+            <span className="text-zinc-300">/</span>
             
-            <div className="text-xs font-bold text-zinc-400 flex items-center gap-2 uppercase tracking-widest mt-1">
-              <span className="hover:text-white cursor-pointer transition-colors">Portfolio</span>
-              <span className="text-zinc-600">/</span>
-              <span className="hover:text-white cursor-pointer transition-colors">{projectName}</span>
-              <span className="text-zinc-600">/</span>
-              <span className="text-indigo-300 font-black">{currentRouteName}</span>
-            </div>
+            {isLoading ? (
+              <div className="w-32 h-8 bg-zinc-100 animate-pulse rounded-md"></div>
+            ) : (
+              <EntitySelector
+                value={selectedProjectId || null}
+                onChange={setSelectedProjectId}
+                triggerIcon={<FolderOpen className="w-4 h-4" />}
+                options={projects?.map((p, i) => ({
+                  id: p.id,
+                  label: p.name,
+                  group: i < 2 ? 'Pinned' : 'Recent',
+                  health: 85 + i * 2, // Mock health data
+                  sprint: `Sprint ${10 + i}`, // Mock sprint
+                  owner: 'Mobile Team' // Mock owner
+                })) || []}
+              />
+            )}
+            
+            <span className="text-zinc-300">/</span>
+            <Link to={`/${location.pathname.split('/')[1] || 'dashboard'}`} className="text-sm font-bold text-zinc-900 capitalize hover:underline transition-all">
+              {location.pathname.split('/')[1] || 'Overview'}
+            </Link>
+          </div>
+
+          {/* Center: Inline Context Metrics */}
+          <div className="hidden xl:flex items-center gap-4">
+             <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-zinc-100 transition-colors border border-transparent hover:border-zinc-200">
+               <span className="w-2 h-2 rounded-full bg-success"></span>
+               <span className="text-xs font-bold text-zinc-900 uppercase tracking-widest">Healthy 87</span>
+             </button>
+             <Link to="/tasks?filter=blocked" className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-zinc-100 transition-colors border border-transparent hover:border-zinc-200">
+               <span className="w-2 h-2 rounded-full bg-danger"></span>
+               <span className="text-xs font-bold text-zinc-900 uppercase tracking-widest">3 Blocked</span>
+             </Link>
+             <Link to="/health" className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-zinc-100 transition-colors border border-transparent hover:border-zinc-200">
+               <span className="w-2 h-2 rounded-full bg-warning"></span>
+               <span className="text-xs font-bold text-zinc-900 uppercase tracking-widest">2 Risks</span>
+             </Link>
+             <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-zinc-100 transition-colors border border-transparent hover:border-zinc-200">
+               <span className="w-2 h-2 rounded-full bg-zinc-300"></span>
+               <span className="text-xs font-bold text-zinc-900 uppercase tracking-widest">Forecast On Track</span>
+             </button>
           </div>
           
-          <div className="flex items-center gap-5">
-            <div className="relative hidden lg:flex">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
-              <div className="absolute right-3 top-2.5 flex items-center gap-1">
-                <kbd className="inline-flex h-5 items-center gap-1 rounded border border-zinc-700 bg-zinc-800 px-1.5 font-mono text-[10px] font-bold text-zinc-300">
-                  <span className="text-xs">⌘</span>K
-                </kbd>
-              </div>
-              <Input
-                type="search"
-                placeholder="Search delivery network..."
-                className="w-80 rounded-lg bg-zinc-900/80 border-zinc-700 pl-9 pr-12 focus-visible:ring-1 focus-visible:ring-indigo-500 text-sm h-10 font-medium text-white placeholder:text-zinc-500"
-              />
-            </div>
+          {/* Right: Search, Notifications, Avatar */}
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsCommandOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-lg transition-colors text-zinc-500"
+            >
+              <Search className="w-4 h-4" />
+              <span className="text-sm font-medium mr-4">Search...</span>
+              <kbd className="px-1.5 py-0.5 bg-white border border-zinc-200 rounded text-[10px] font-bold text-zinc-500">⌘K</kbd>
+            </button>
 
-            <div className="flex items-center gap-2 bg-zinc-900/80 border border-zinc-700 rounded-lg px-4 py-2 cursor-pointer hover:bg-zinc-800 hover:border-zinc-600 transition-all shadow-sm">
-              <Calendar className="h-4 w-4 text-zinc-300" />
-              <span className="text-sm text-white font-bold">Nov 2 – Nov 30, 2025</span>
-            </div>
+            <div className="w-px h-6 bg-zinc-200 mx-2"></div>
 
-            <Button variant="outline" className="h-10 bg-zinc-900/80 border-zinc-700 text-zinc-200 hover:text-white hover:bg-zinc-800 hover:border-zinc-600 font-bold gap-2 rounded-lg">
-              <Filter className="h-4 w-4" />
-              Filters
-            </Button>
-
-            <div className="h-8 w-px bg-zinc-800 mx-1"></div>
-
-            <div className="relative cursor-pointer group">
-              <Bell className="h-6 w-6 text-zinc-300 group-hover:text-white transition-colors" />
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white border-2 border-[#131720] shadow-[0_0_10px_rgba(239,68,68,0.5)]">8</span>
-            </div>
-
-            <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-zinc-800 hover:ring-indigo-500 transition-all ml-2">
+            <button 
+              onClick={() => setIsNotificationOpen(true)}
+              className="text-zinc-400 hover:text-zinc-900 transition-colors relative"
+            >
+              <Bell className="h-5 w-5" />
+              <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-danger border-2 border-white"></span>
+            </button>
+            <Avatar className="h-8 w-8 cursor-pointer ring-1 ring-zinc-200 hover:ring-indigo-500 transition-all">
               <AvatarImage src="" alt="User" />
-              <AvatarFallback className="bg-indigo-600 text-white text-xs font-bold border border-indigo-500">PP</AvatarFallback>
+              <AvatarFallback className="bg-indigo-50 text-indigo-600 text-xs font-semibold">PP</AvatarFallback>
             </Avatar>
-            <div className="hidden xl:flex flex-col">
-              <span className="text-sm font-black text-white leading-none tracking-wide">Priyank Pahwa</span>
-              <span className="text-[10px] text-zinc-400 mt-1 uppercase tracking-widest font-bold">Project Lead</span>
-            </div>
           </div>
         </header>
 
         {/* Main Content (Scrollable) */}
-        <main className="flex-1 overflow-y-auto p-8 bg-[#0B0E14] custom-scrollbar">
+        <main className="flex-1 overflow-y-auto px-8 py-8 bg-[#FAFAFA] w-full">
           <Outlet />
         </main>
       </div>
+      
+      <CommandPalette 
+        open={isCommandOpen}
+        onClose={() => setIsCommandOpen(false)}
+      />
+      
+      <NotificationDrawer 
+        open={isNotificationOpen}
+        onClose={() => setIsNotificationOpen(false)}
+      />
     </div>
   );
 }

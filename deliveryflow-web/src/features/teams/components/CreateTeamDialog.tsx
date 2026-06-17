@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { teamService, type CreateTeamRequest } from '@/api/teams';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { StandardModal } from '@/components/ui/StandardModal';
 import { Input } from '@/components/ui/input';
 
 interface CreateTeamDialogProps {
@@ -28,8 +27,7 @@ export function CreateTeamDialog({ open, onOpenChange }: CreateTeamDialogProps) 
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     mutation.mutate(formData);
   };
 
@@ -39,72 +37,75 @@ export function CreateTeamDialog({ open, onOpenChange }: CreateTeamDialogProps) 
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-zinc-950 text-white border-zinc-800">
-        <DialogHeader>
-          <DialogTitle>Create New Team</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+    <StandardModal
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="Create New Team"
+      primaryAction={{
+        label: 'Create Team',
+        onClick: handleSubmit,
+        loading: mutation.isPending,
+        disabled: !formData.name || !formData.description,
+      }}
+      secondaryAction={{
+        label: 'Cancel',
+        onClick: () => onOpenChange(false),
+      }}
+    >
+      <form id="create-team-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="name" className="text-sm font-bold text-zinc-900">Team Name <span className="text-red-500">*</span></label>
+          <Input 
+            id="name" 
+            name="name"
+            placeholder="e.g. Phoenix Backend Core"
+            value={formData.name} 
+            onChange={handleChange} 
+            className="bg-white border-zinc-200 text-zinc-900 focus:ring-zinc-900 focus:border-zinc-900"
+            required 
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="description" className="text-sm font-bold text-zinc-900">Description <span className="text-red-500">*</span></label>
+          <Input 
+            id="description" 
+            name="description"
+            placeholder="e.g. Handles core infrastructure and payments."
+            value={formData.description} 
+            onChange={handleChange} 
+            className="bg-white border-zinc-200 text-zinc-900 focus:ring-zinc-900 focus:border-zinc-900"
+            required 
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label htmlFor="name" className="text-sm font-medium">Team Name</label>
+            <label htmlFor="teamType" className="text-sm font-bold text-zinc-900">Team Type</label>
+            <select
+              id="teamType"
+              name="teamType"
+              value={formData.teamType}
+              onChange={handleChange}
+              className="flex h-10 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:border-zinc-900"
+            >
+              <option value="SCRUM">Scrum</option>
+              <option value="KANBAN">Kanban</option>
+              <option value="SUPPORT">Support</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="capacity" className="text-sm font-bold text-zinc-900">Capacity (Pts)</label>
             <Input 
-              id="name" 
-              name="name"
-              value={formData.name} 
+              id="capacity" 
+              name="capacity"
+              type="number"
+              value={formData.capacity} 
               onChange={handleChange} 
-              className="bg-zinc-900 border-zinc-800"
+              className="bg-white border-zinc-200 text-zinc-900 focus:ring-zinc-900 focus:border-zinc-900"
               required 
             />
           </div>
-          <div className="space-y-2">
-            <label htmlFor="description" className="text-sm font-medium">Description</label>
-            <Input 
-              id="description" 
-              name="description"
-              value={formData.description} 
-              onChange={handleChange} 
-              className="bg-zinc-900 border-zinc-800"
-              required 
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="teamType" className="text-sm font-medium">Team Type</label>
-              <select
-                id="teamType"
-                name="teamType"
-                value={formData.teamType}
-                onChange={handleChange}
-                className="flex h-9 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="SCRUM">Scrum</option>
-                <option value="KANBAN">Kanban</option>
-                <option value="SUPPORT">Support</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="capacity" className="text-sm font-medium">Capacity (Pts)</label>
-              <Input 
-                id="capacity" 
-                name="capacity"
-                type="number"
-                value={formData.capacity} 
-                onChange={handleChange} 
-                className="bg-zinc-900 border-zinc-800"
-                required 
-              />
-            </div>
-          </div>
-          <DialogFooter className="pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="border-zinc-800">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Creating...' : 'Create Team'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </form>
+    </StandardModal>
   );
 }

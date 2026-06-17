@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { taskService, type CreateTaskRequest } from '@/api/tasks';
 import { sprintService } from '@/api/sprints';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { StandardModal } from '@/components/ui/StandardModal';
 import { Input } from '@/components/ui/input';
 
 interface CreateTaskDialogProps {
@@ -37,8 +36,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     if (!formData.sprintId) {
       alert('Please select a sprint');
       return;
@@ -63,90 +61,91 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-zinc-950 text-white border-zinc-800">
-        <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+    <StandardModal
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="Create New Task"
+      primaryAction={{
+        label: 'Create Task',
+        onClick: handleSubmit,
+        loading: mutation.isPending,
+        disabled: !formData.title || !formData.sprintId,
+      }}
+      secondaryAction={{
+        label: 'Cancel',
+        onClick: () => onOpenChange(false),
+      }}
+    >
+      <form id="create-task-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="sprintId" className="text-sm font-bold text-zinc-900">Sprint <span className="text-red-500">*</span></label>
+          <select
+            id="sprintId"
+            name="sprintId"
+            value={formData.sprintId}
+            onChange={handleSprintChange}
+            className="flex h-10 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:border-zinc-900"
+            required
+          >
+            <option value="" disabled>Select a Sprint</option>
+            {sprints?.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="title" className="text-sm font-bold text-zinc-900">Task Title <span className="text-red-500">*</span></label>
+          <Input 
+            id="title" 
+            name="title"
+            placeholder="e.g. Implement login flow"
+            value={formData.title} 
+            onChange={handleChange} 
+            className="bg-white border-zinc-200 text-zinc-900 focus:ring-zinc-900 focus:border-zinc-900"
+            required 
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="description" className="text-sm font-bold text-zinc-900">Description</label>
+          <Input 
+            id="description" 
+            name="description"
+            placeholder="Brief description"
+            value={formData.description} 
+            onChange={handleChange} 
+            className="bg-white border-zinc-200 text-zinc-900 focus:ring-zinc-900 focus:border-zinc-900"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label htmlFor="sprintId" className="text-sm font-medium">Sprint</label>
+            <label htmlFor="priority" className="text-sm font-bold text-zinc-900">Priority</label>
             <select
-              id="sprintId"
-              name="sprintId"
-              value={formData.sprintId}
-              onChange={handleSprintChange}
-              className="flex h-9 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              required
+              id="priority"
+              name="priority"
+              value={formData.priority}
+              onChange={handleChange}
+              className="flex h-10 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:border-zinc-900"
             >
-              <option value="" disabled>Select a Sprint</option>
-              {sprints?.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+              <option value="CRITICAL">Critical</option>
             </select>
           </div>
           <div className="space-y-2">
-            <label htmlFor="title" className="text-sm font-medium">Title</label>
+            <label htmlFor="storyPoints" className="text-sm font-bold text-zinc-900">Story Points</label>
             <Input 
-              id="title" 
-              name="title"
-              placeholder="e.g. Implement login flow"
-              value={formData.title} 
+              id="storyPoints" 
+              name="storyPoints"
+              type="number"
+              value={formData.storyPoints} 
               onChange={handleChange} 
-              className="bg-zinc-900 border-zinc-800"
+              className="bg-white border-zinc-200 text-zinc-900 focus:ring-zinc-900 focus:border-zinc-900"
               required 
             />
           </div>
-          <div className="space-y-2">
-            <label htmlFor="description" className="text-sm font-medium">Description</label>
-            <Input 
-              id="description" 
-              name="description"
-              placeholder="Brief description"
-              value={formData.description} 
-              onChange={handleChange} 
-              className="bg-zinc-900 border-zinc-800"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="priority" className="text-sm font-medium">Priority</label>
-              <select
-                id="priority"
-                name="priority"
-                value={formData.priority}
-                onChange={handleChange}
-                className="flex h-9 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-                <option value="CRITICAL">Critical</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="storyPoints" className="text-sm font-medium">Story Points</label>
-              <Input 
-                id="storyPoints" 
-                name="storyPoints"
-                type="number"
-                value={formData.storyPoints} 
-                onChange={handleChange} 
-                className="bg-zinc-900 border-zinc-800"
-                required 
-              />
-            </div>
-          </div>
-          <DialogFooter className="pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="border-zinc-800">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Creating...' : 'Create Task'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </form>
+    </StandardModal>
   );
 }

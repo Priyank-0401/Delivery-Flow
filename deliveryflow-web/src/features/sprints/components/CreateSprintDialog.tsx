@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { sprintService, type CreateSprintRequest } from '@/api/sprints';
 import { projectService } from '@/api/projects';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { StandardModal } from '@/components/ui/StandardModal';
 import { Input } from '@/components/ui/input';
 
 interface CreateSprintDialogProps {
@@ -35,8 +34,7 @@ export function CreateSprintDialog({ open, onOpenChange }: CreateSprintDialogPro
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     if (!formData.projectId) {
       alert('Please select a project');
       return;
@@ -49,75 +47,77 @@ export function CreateSprintDialog({ open, onOpenChange }: CreateSprintDialogPro
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-zinc-950 text-white border-zinc-800">
-        <DialogHeader>
-          <DialogTitle>Create New Sprint</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+    <StandardModal
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="Create New Sprint"
+      primaryAction={{
+        label: 'Create Sprint',
+        onClick: handleSubmit,
+        loading: mutation.isPending,
+        disabled: !formData.projectId || !formData.name,
+      }}
+      secondaryAction={{
+        label: 'Cancel',
+        onClick: () => onOpenChange(false),
+      }}
+    >
+      <form id="create-sprint-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="projectId" className="text-sm font-bold text-zinc-900">Project <span className="text-red-500">*</span></label>
+          <select
+            id="projectId"
+            name="projectId"
+            value={formData.projectId}
+            onChange={handleChange}
+            className="flex h-10 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:border-zinc-900"
+            required
+          >
+            <option value="" disabled>Select a Project</option>
+            {projects?.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="name" className="text-sm font-bold text-zinc-900">Sprint Name <span className="text-red-500">*</span></label>
+          <Input 
+            id="name" 
+            name="name"
+            placeholder="e.g. Sprint 42"
+            value={formData.name} 
+            onChange={handleChange} 
+            className="bg-white border-zinc-200 text-zinc-900 focus:ring-zinc-900 focus:border-zinc-900"
+            required 
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label htmlFor="projectId" className="text-sm font-medium">Project</label>
-            <select
-              id="projectId"
-              name="projectId"
-              value={formData.projectId}
-              onChange={handleChange}
-              className="flex h-9 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              required
-            >
-              <option value="" disabled>Select a Project</option>
-              {projects?.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="name" className="text-sm font-medium">Sprint Name</label>
+            <label htmlFor="startDate" className="text-sm font-bold text-zinc-900">Start Date <span className="text-red-500">*</span></label>
             <Input 
-              id="name" 
-              name="name"
-              value={formData.name} 
+              id="startDate" 
+              name="startDate"
+              type="date"
+              value={formData.startDate} 
               onChange={handleChange} 
-              className="bg-zinc-900 border-zinc-800"
+              className="bg-white border-zinc-200 text-zinc-900 focus:ring-zinc-900 focus:border-zinc-900"
               required 
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="startDate" className="text-sm font-medium">Start Date</label>
-              <Input 
-                id="startDate" 
-                name="startDate"
-                type="date"
-                value={formData.startDate} 
-                onChange={handleChange} 
-                className="bg-zinc-900 border-zinc-800"
-                required 
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="endDate" className="text-sm font-medium">End Date</label>
-              <Input 
-                id="endDate" 
-                name="endDate"
-                type="date"
-                value={formData.endDate} 
-                onChange={handleChange} 
-                className="bg-zinc-900 border-zinc-800"
-                required 
-              />
-            </div>
+          <div className="space-y-2">
+            <label htmlFor="endDate" className="text-sm font-bold text-zinc-900">End Date <span className="text-red-500">*</span></label>
+            <Input 
+              id="endDate" 
+              name="endDate"
+              type="date"
+              value={formData.endDate} 
+              onChange={handleChange} 
+              className="bg-white border-zinc-200 text-zinc-900 focus:ring-zinc-900 focus:border-zinc-900"
+              required 
+            />
           </div>
-          <DialogFooter className="pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="border-zinc-800">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Creating...' : 'Create Sprint'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </form>
+    </StandardModal>
   );
 }

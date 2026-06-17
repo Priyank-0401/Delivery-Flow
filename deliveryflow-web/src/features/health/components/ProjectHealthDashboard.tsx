@@ -1,59 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { healthService } from '../api/health';
-import { ShieldAlert, AlertCircle, TrendingUp } from 'lucide-react';
+import { ShieldAlert, AlertCircle, TrendingUp, CheckCircle2, Activity, Bug, ArrowRight } from 'lucide-react';
 import { useProjectStore } from '@/store/useProjectStore';
-import { HealthRadarChart } from './HealthRadarChart';
 import { HealthHistoryTrendline } from './HealthHistoryTrendline';
-
-const statusColorMap: Record<string, string> = {
-  GREEN: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
-  YELLOW: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
-  ORANGE: 'text-orange-400 bg-orange-500/10 border-orange-500/30',
-  RED: 'text-red-400 bg-red-500/10 border-red-500/30',
-};
-
-const scoreRingColor: Record<string, string> = {
-  GREEN: '#10b981',
-  YELLOW: '#f59e0b',
-  ORANGE: '#f97316',
-  RED: '#ef4444',
-};
-
-function MassiveScoreRing({ score, color }: { score: number; color: string }) {
-  const radius = 90;
-  const circumference = 2 * Math.PI * radius;
-  const progress = (score / 100) * circumference;
-
-  return (
-    <div className="relative w-64 h-64 flex-shrink-0 mx-auto">
-      <svg viewBox="0 0 200 200" className="w-full h-full -rotate-90">
-        <circle cx="100" cy="100" r={radius} fill="none" stroke="#18181b" strokeWidth="12" />
-        <circle
-          cx="100"
-          cy="100"
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth="12"
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference - progress}
-          strokeLinecap="round"
-          className="transition-all duration-1000 ease-out"
-          style={{ filter: `drop-shadow(0 0 10px ${color}40)` }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-7xl font-black text-white tracking-tighter">{score}</span>
-        <span className="text-sm font-bold text-zinc-500 mt-1 tracking-widest uppercase">/ 100</span>
-      </div>
-    </div>
-  );
-}
+import { StatCard } from '@/components/ui/StatCard';
+import { Button } from '@/components/ui/button';
 
 export function ProjectHealthDashboard() {
   const { selectedProjectId } = useProjectStore();
   const queryClient = useQueryClient();
-
 
   const { data: health, isLoading: healthLoading } = useQuery({
     queryKey: ['projectHealth', selectedProjectId],
@@ -75,158 +30,181 @@ export function ProjectHealthDashboard() {
     },
   });
 
-  const ringColor = health ? scoreRingColor[health.statusColor] || '#6b7280' : '#6b7280';
-  const statusClasses = health ? statusColorMap[health.statusColor] || '' : '';
-
   return (
-    <div className="flex flex-col w-full h-full text-white space-y-8">
-      {/* Header (Removed local dropdown, using Global) */}
-      <div className="flex items-center justify-between mb-8">
+    <div className="flex flex-col w-full h-full space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-white uppercase">Project Health</h2>
-          <p className="text-zinc-400 font-medium tracking-wide mt-1 uppercase text-xs">Multi-dimensional risk assessment.</p>
+          <h2 className="text-4xl font-black tracking-tight text-zinc-900">Health Dashboard</h2>
+          <p className="text-zinc-500 mt-2 font-medium text-sm">Multi-dimensional risk assessment.</p>
         </div>
-        <button
+        <Button
           onClick={() => recalcMutation.mutate()}
           disabled={!selectedProjectId || recalcMutation.isPending}
-          className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm px-5 py-2 rounded-lg transition-colors font-bold tracking-wide"
+          className="bg-zinc-900 hover:bg-zinc-800 text-white font-semibold shadow-sm"
         >
-          {recalcMutation.isPending ? 'Calculating...' : '↻ Recalculate'}
-        </button>
+          {recalcMutation.isPending ? 'Calculating...' : 'Recalculate Score'}
+        </Button>
       </div>
 
       {!selectedProjectId && (
-        <div className="flex items-center justify-center h-64 text-zinc-500">
-          Select a project to view its health dashboard
+        <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-zinc-200 rounded-2xl bg-zinc-50 h-64">
+          <span className="text-zinc-500 font-semibold mb-3">No project selected.</span>
+          <p className="text-zinc-400 text-sm">Select a project from the command palette to view its health.</p>
         </div>
       )}
 
       {selectedProjectId && healthLoading && (
         <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
       {health && (
         <>
-          {/* Top Tri-Panel Layout: Score | Factors | Trend */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Top Row Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <StatCard 
+              title="Overall Health"
+              value={health.overallScore.toString()}
+              icon={Activity}
+              trend={{ value: '+5 this week', isPositive: true }}
+              subtitle={health.status}
+            />
+            <StatCard 
+              title="Velocity Score"
+              value={health.velocityScore.toString()}
+              icon={TrendingUp}
+              trend={{ value: 'Stable', isPositive: true }}
+              subtitle="Consistency over last 3 sprints"
+            />
+            <StatCard 
+              title="Defect Density"
+              value={health.defectScore.toString()}
+              icon={Bug}
+              trend={{ value: '-2 this week', isPositive: false }}
+              subtitle="Bugs per 100 lines of code"
+            />
+          </div>
+
+          {/* Stories Section: What's helping vs What's hurting */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            {/* Left: Massive Score */}
-            <div className="bg-[#131720] border border-zinc-800/50 rounded-xl p-8 flex flex-col items-center justify-center shadow-xl">
-              <MassiveScoreRing score={health.overallScore} color={ringColor} />
-              <div className="mt-8 text-center">
-                <span className={`text-xl font-black px-6 py-2 rounded-md border tracking-widest ${statusClasses}`}>
-                  {health.status}
-                </span>
-                <p className="text-xs font-bold text-zinc-600 mt-4 uppercase tracking-widest">
-                  Last updated: {health.lastCalculatedAt ? new Date(health.lastCalculatedAt).toLocaleTimeString() : 'Never'}
-                </p>
-              </div>
+            {/* What's helping? */}
+            <div className="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-zinc-900 mb-6 flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                What's helping?
+              </h3>
+              <ul className="space-y-6">
+                <li className="flex items-start gap-4 group">
+                  <div className="p-2 bg-emerald-50 rounded-lg shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
+                    <TrendingUp className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-zinc-900 font-bold text-sm">Velocity Improved</h4>
+                    <p className="text-zinc-500 text-sm mt-1 leading-relaxed">Team velocity stabilized at 10% above target for 2 consecutive sprints.</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-4 group">
+                  <div className="p-2 bg-emerald-50 rounded-lg shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-zinc-900 font-bold text-sm">Code Quality</h4>
+                    <p className="text-zinc-500 text-sm mt-1 leading-relaxed">Test coverage increased to 85%, reducing defect leakage to production.</p>
+                  </div>
+                </li>
+              </ul>
             </div>
 
-            {/* Center: Contributing Factors */}
-            <div className="bg-[#131720] border border-zinc-800/80 rounded-2xl p-8 flex flex-col justify-center shadow-xl">
-              <h3 className="text-sm font-black text-zinc-300 uppercase tracking-widest mb-6">Contributing Factors</h3>
-              <div className="space-y-6">
-                <div className="bg-[#0B0E14] border border-zinc-800/50 p-5 rounded-xl flex items-center justify-between shadow-inner">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-red-500/10 rounded-lg">
-                      <ShieldAlert className="w-6 h-6 text-red-500" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-white text-lg">High Risk Dependencies</h4>
-                      <p className="text-sm text-zinc-400 font-medium">3 critical path items blocked</p>
-                    </div>
+            {/* What's hurting? */}
+            <div className="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-zinc-900 mb-6 flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-red-500" />
+                What's hurting?
+              </h3>
+              <ul className="space-y-6">
+                <li className="flex items-start gap-4 group cursor-pointer">
+                  <div className="p-2 bg-red-50 rounded-lg shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
+                    <ShieldAlert className="w-4 h-4 text-red-600" />
                   </div>
-                  <span className="text-red-500 font-black text-xl">-12</span>
-                </div>
-                
-                <div className="bg-[#0B0E14] border border-zinc-800/50 p-5 rounded-xl flex items-center justify-between shadow-inner">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-amber-500/10 rounded-lg">
-                      <AlertCircle className="w-6 h-6 text-amber-500" />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-zinc-900 font-bold text-sm">Critical Path Delay</h4>
+                      <ArrowRight className="w-4 h-4 text-zinc-300 group-hover:text-zinc-500 transition-colors" />
                     </div>
-                    <div>
-                      <h4 className="font-bold text-white text-lg">Velocity Drop</h4>
-                      <p className="text-sm text-zinc-400 font-medium">15% below target for 2 sprints</p>
-                    </div>
+                    <p className="text-zinc-500 text-sm mt-1 leading-relaxed">3 tasks on the critical sequence are currently blocked.</p>
                   </div>
-                  <span className="text-amber-500 font-black text-xl">-8</span>
-                </div>
-                
-                <div className="bg-[#0B0E14] border border-zinc-800/50 p-5 rounded-xl flex items-center justify-between shadow-inner">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-emerald-500/10 rounded-lg">
-                      <TrendingUp className="w-6 h-6 text-emerald-500" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-white text-lg">Code Quality</h4>
-                      <p className="text-sm text-zinc-400 font-medium">Test coverage improved to 85%</p>
-                    </div>
+                </li>
+                <li className="flex items-start gap-4 group cursor-pointer">
+                  <div className="p-2 bg-amber-50 rounded-lg shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
+                    <AlertCircle className="w-4 h-4 text-amber-600" />
                   </div>
-                  <span className="text-emerald-500 font-black text-xl">+5</span>
-                </div>
-              </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-zinc-900 font-bold text-sm">Backend Overload</h4>
+                      <ArrowRight className="w-4 h-4 text-zinc-300 group-hover:text-zinc-500 transition-colors" />
+                    </div>
+                    <p className="text-zinc-500 text-sm mt-1 leading-relaxed">Backend capacity is utilized at 135%, predicting burnout and delays.</p>
+                  </div>
+                </li>
+              </ul>
             </div>
+          </div>
 
-            {/* Right: Trend */}
-            <div className="bg-[#131720] border border-zinc-800/50 rounded-xl p-8 shadow-xl flex flex-col">
-              <h3 className="text-sm font-bold text-zinc-400 mb-6 uppercase tracking-widest">30-Day Trend</h3>
-              <div className="flex-1 min-h-[200px] w-full">
+          {/* Secondary Charts Section */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            
+            {/* Trend */}
+            <div className="bg-white border border-zinc-200 rounded-xl shadow-sm flex flex-col overflow-hidden">
+              <div className="p-4 border-b border-zinc-100 bg-zinc-50/50">
+                <h3 className="font-bold text-zinc-900">30-Day Trend</h3>
+              </div>
+              <div className="p-6 min-h-[300px] flex-1 flex flex-col">
                 <HealthHistoryTrendline history={history || []} />
               </div>
             </div>
 
-          </div>
-
-          {/* Bottom Layout: Radar + Dimension Breakdown */}
-          <div className="grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-6">
-            
-            {/* Massive Radar Chart */}
-            <div className="bg-[#131720] border border-zinc-800/50 rounded-xl p-8 shadow-xl min-h-[500px] flex flex-col">
-              <h3 className="text-sm font-bold text-zinc-400 mb-6 uppercase tracking-widest">Multi-Dimensional Health</h3>
-              <div className="flex-1 relative w-full h-full">
-                <HealthRadarChart health={health} />
-              </div>
-            </div>
-
             {/* Dimension Breakdown Bars */}
-            <div className="bg-[#131720] border border-zinc-800/50 rounded-xl p-8 shadow-xl">
-              <h3 className="text-sm font-bold text-zinc-400 mb-8 uppercase tracking-widest">Dimension Breakdown</h3>
-              <div className="space-y-6">
-                {[
-                  { label: 'Velocity Consistency', score: health.velocityScore, weight: '15%' },
-                  { label: 'Blocker Density', score: health.blockerScore, weight: '15%' },
-                  { label: 'Defect Leakage', score: health.defectScore, weight: '10%' },
-                  { label: 'Dependency Risk', score: health.dependencyScore, weight: '20%' },
-                  { label: 'Team Utilization', score: health.utilizationScore, weight: '10%' },
-                  { label: 'Sprint Stability', score: health.stabilityScore, weight: '10%' },
-                  { label: 'Scope Creep', score: health.scopeCreepScore, weight: '10%' },
-                  { label: 'Release Confidence', score: health.releaseConfidenceScore, weight: '10%' },
-                ].map((dim) => {
-                  const barColor = dim.score >= 85 ? 'bg-emerald-500' :
-                    dim.score >= 70 ? 'bg-amber-500' :
-                    dim.score >= 50 ? 'bg-orange-500' : 'bg-red-500';
+            <div className="bg-white border border-zinc-200 rounded-xl shadow-sm flex flex-col overflow-hidden">
+              <div className="p-4 border-b border-zinc-100 bg-zinc-50/50">
+                <h3 className="font-bold text-zinc-900">Dimension Breakdown</h3>
+              </div>
+              <div className="p-6 flex-1">
+                <div className="space-y-5">
+                  {[
+                    { label: 'Velocity Consistency', score: health.velocityScore },
+                    { label: 'Blocker Density', score: health.blockerScore },
+                    { label: 'Defect Leakage', score: health.defectScore },
+                    { label: 'Dependency Risk', score: health.dependencyScore },
+                    { label: 'Team Utilization', score: health.utilizationScore },
+                    { label: 'Sprint Stability', score: health.stabilityScore },
+                    { label: 'Scope Creep', score: health.scopeCreepScore },
+                    { label: 'Release Confidence', score: health.releaseConfidenceScore },
+                  ].map((dim) => {
+                    const barColor = dim.score >= 85 ? 'bg-emerald-500' :
+                      dim.score >= 70 ? 'bg-amber-500' :
+                      dim.score >= 50 ? 'bg-orange-500' : 'bg-red-500';
 
-                  return (
-                    <div key={dim.label}>
-                      <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="font-bold text-zinc-300">{dim.label} <span className="text-zinc-600 font-normal">({dim.weight})</span></span>
-                        <span className="font-mono font-bold text-white">{dim.score}</span>
+                    return (
+                      <div key={dim.label}>
+                        <div className="flex items-center justify-between text-sm mb-1.5">
+                          <span className="font-semibold text-zinc-700">{dim.label}</span>
+                          <span className="font-bold text-zinc-900">{dim.score}</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-1000 ${barColor}`}
+                            style={{ width: `${dim.score}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full h-2.5 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800/50">
-                        <div
-                          className={`h-full rounded-full transition-all duration-1000 ${barColor}`}
-                          style={{ width: `${dim.score}%`, filter: `drop-shadow(0 0 8px ${barColor}80)` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
-
           </div>
         </>
       )}

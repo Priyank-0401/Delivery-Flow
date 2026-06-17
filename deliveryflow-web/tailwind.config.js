@@ -53,11 +53,12 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // DeliveryFlow Custom Status Colors
-        success: "#10b981", // Emerald 500
-        warning: "#f59e0b", // Amber 500
-        critical: "#ef4444", // Red 500
-        external: "#8b5cf6", // Purple 500
+        // Semantic Colors
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
+        danger: "hsl(var(--danger))",
+        info: "hsl(var(--info))",
+        neutral: "hsl(var(--neutral))",
       },
       borderRadius: {
         lg: "var(--radius)",
