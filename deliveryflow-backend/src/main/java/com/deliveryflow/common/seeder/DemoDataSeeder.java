@@ -195,7 +195,6 @@ public class DemoDataSeeder {
 
         // 7. Seed Tasks
         TaskPriority[] taskPriorities = {TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH, TaskPriority.CRITICAL};
-        // Weight distribution: 20% TODO, 25% IN_PROGRESS, 15% IN_REVIEW, 30% DONE, 10% BLOCKED
         TaskStatus[] weightedStatuses = {
                 TaskStatus.TODO, TaskStatus.TODO,
                 TaskStatus.IN_PROGRESS, TaskStatus.IN_PROGRESS, TaskStatus.IN_PROGRESS,

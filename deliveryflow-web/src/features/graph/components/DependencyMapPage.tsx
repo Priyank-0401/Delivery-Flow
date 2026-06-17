@@ -1,34 +1,25 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import ReactFlow, {
   Background,
   Controls,
-  MiniMap,
   useNodesState,
   useEdgesState,
   MarkerType,
 } from 'reactflow';
+import type { Node } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-import { projectService } from '@/api/projects';
 import { graphService } from '../api/graph';
-import { AlertCircle, Play, Info } from 'lucide-react';
+import { AlertCircle, Play, Info, X, ShieldAlert, Clock, BarChart4 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useProjectStore } from '@/store/useProjectStore';
 
 export function DependencyMapPage() {
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const { selectedProjectId } = useProjectStore();
+  const [selectedNodeData, setSelectedNodeData] = useState<any | null>(null);
 
-  // 1. Fetch Projects
-  const { data: projects, isLoading: loadingProjects } = useQuery({
-    queryKey: ['projects'],
-    queryFn: projectService.getProjects,
-  });
-
-  // Set initial selected project
-  useEffect(() => {
-    if (projects && projects.length > 0 && !selectedProjectId) {
-      setSelectedProjectId(projects[0].id);
-    }
-  }, [projects, selectedProjectId]);
+  // (Projects fetch moved to global layout)
 
   // 2. Fetch Graph Data
   const {
@@ -115,10 +106,10 @@ export function DependencyMapPage() {
       const groupNodes = groups[lvl];
       groupNodes.forEach((id, index) => {
         // Distribute vertically centered around y=250
-        const spacing = 140;
+        const spacing = 160;
         const totalHeight = (groupNodes.length - 1) * spacing;
         const y = 250 + (index * spacing - totalHeight / 2);
-        const x = lvl * 280 + 100;
+        const x = lvl * 320 + 100;
         positions[id] = { x, y };
       });
     });
@@ -135,33 +126,43 @@ export function DependencyMapPage() {
     const flowNodes = graphData.nodes.map((n) => {
       const pos = layoutPositions[n.id] || { x: 0, y: 0 };
       const isCritical = criticalNodeIds.has(n.id);
+      const isBlocked = n.status === 'BLOCKED';
 
       return {
         id: n.id,
         position: pos,
         data: {
+          ...n,
+          isCritical,
           label: (
-            <div className="flex flex-col items-start text-xs p-1">
-              <span className="font-mono text-[10px] text-zinc-400 font-semibold mb-1">
-                {n.taskKey || 'NO-KEY'}
-              </span>
-              <span className="font-bold text-white text-left line-clamp-1 mb-1.5">
+            <div className="flex flex-col items-start text-xs p-2">
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className="font-mono text-[10px] text-zinc-400 font-bold uppercase tracking-widest">
+                  {n.taskKey || 'NO-KEY'}
+                </span>
+                {isBlocked && (
+                  <span className="flex h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse" />
+                )}
+              </div>
+              <span className="font-bold text-white text-left line-clamp-2 mb-2 text-sm leading-tight">
                 {n.label}
               </span>
-              <div className="flex items-center justify-between w-full">
+              <div className="flex items-center justify-between w-full mt-auto">
                 <span
-                  className={`px-1.5 py-0.5 rounded-[4px] font-bold text-[9px] uppercase tracking-wide ${
+                  className={`px-1.5 py-0.5 rounded-[4px] font-bold text-[9px] uppercase tracking-wider ${
                     n.status === 'DONE'
                       ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                       : n.status === 'IN_PROGRESS'
                       ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                      : n.status === 'BLOCKED'
+                      ? 'bg-red-500/10 text-red-400 border border-red-500/20'
                       : 'bg-zinc-800 text-zinc-400 border border-zinc-700/50'
                   }`}
                 >
                   {n.status || 'TODO'}
                 </span>
                 {n.estimatedHours && (
-                  <span className="text-zinc-500 text-[10px] font-medium">
+                  <span className="text-zinc-500 font-mono text-[10px] font-bold">
                     {n.estimatedHours}h
                   </span>
                 )}
@@ -170,21 +171,22 @@ export function DependencyMapPage() {
           ),
         },
         style: {
-          background: isCritical ? '#181212' : '#0B0F19',
+          background: isCritical ? '#181212' : '#131720',
           color: '#e4e4e7',
-          border: isCritical ? '2px solid #ef4444' : '1px solid #1e293b',
+          border: isCritical ? '2px solid #ef4444' : '1px solid #27272a',
           borderRadius: '12px',
-          width: 200,
+          width: 220,
+          height: 90,
           boxShadow: isCritical
-            ? '0 0 15px rgba(239, 68, 68, 0.15)'
-            : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            ? '0 0 20px rgba(239, 68, 68, 0.25)'
+            : '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+          cursor: 'pointer',
         },
       };
     });
 
     const flowEdges = graphData.edges.map((e) => {
-      const isCritical =
-        criticalNodeIds.has(e.source) && criticalNodeIds.has(e.target);
+      const isCritical = criticalNodeIds.has(e.source) && criticalNodeIds.has(e.target);
 
       return {
         id: e.id,
@@ -192,12 +194,12 @@ export function DependencyMapPage() {
         target: e.target,
         animated: isCritical,
         style: {
-          stroke: isCritical ? '#ef4444' : '#334155',
-          strokeWidth: isCritical ? 2.5 : 1.5,
+          stroke: isCritical ? '#ef4444' : '#3f3f46',
+          strokeWidth: isCritical ? 3 : 1.5,
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: isCritical ? '#ef4444' : '#334155',
+          color: isCritical ? '#ef4444' : '#3f3f46',
         },
       };
     });
@@ -206,125 +208,180 @@ export function DependencyMapPage() {
     setEdges(flowEdges);
   }, [graphData, criticalPath, layoutPositions, setNodes, setEdges]);
 
-  const selectedProjectCode = useMemo(() => {
-    return projects?.find((p) => p.id === selectedProjectId)?.projectCode || '';
-  }, [projects, selectedProjectId]);
+
+
+  const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
+    setSelectedNodeData(node.data);
+  }, []);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] space-y-4">
+    <div className="flex flex-col h-[calc(100vh-80px)] space-y-6 relative">
       {/* Header Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            Dependency Map
-          </h2>
-          <p className="text-sm text-zinc-400">
-            Visualize project schedules and bottleneck paths.
-          </p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1">
+          <h2 className="text-3xl font-black tracking-tight text-white uppercase">Delivery Network</h2>
+          <p className="text-zinc-400 font-medium tracking-wide mt-1 uppercase text-xs">Analyze critical path and blockages.</p>
         </div>
-
-        {/* Project Selector */}
-        <div className="flex items-center gap-3 bg-zinc-950 px-3 py-2 border border-zinc-800 rounded-lg shadow-inner">
-          <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-            Project:
-          </label>
-          {loadingProjects ? (
-            <span className="text-xs text-zinc-500">Loading...</span>
-          ) : (
-            <select
-              value={selectedProjectId}
-              onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="bg-transparent text-white text-sm font-semibold focus:outline-none cursor-pointer pr-4"
-            >
-              {projects?.map((proj) => (
-                <option
-                  key={proj.id}
-                  value={proj.id}
-                  className="bg-zinc-950 text-white font-medium"
-                >
-                  {proj.name} ({proj.projectCode})
-                </option>
-              ))}
-            </select>
-          )}
+        <div className="flex gap-4 items-center">
+          <Button 
+            className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold tracking-wide"
+            onClick={() => window.location.reload()}
+          >
+            ↻ Refresh Layout
+          </Button>
         </div>
       </div>
 
       {/* Info Stats Bar */}
       {criticalPath && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-[#0d111a] border border-zinc-800/80 rounded-xl p-3 text-sm">
+        <div className="flex items-center gap-6 text-sm">
           <div className="flex items-center gap-2">
-            <Info className="w-4 h-4 text-emerald-400" />
-            <span className="text-zinc-400">Critical Sequence:</span>
-            <span className="text-white font-semibold">
-              {criticalPath.criticalPathTaskIds.length} Tasks
-            </span>
+            <Info className="w-5 h-5 text-zinc-500" />
+            <span className="text-zinc-400 font-semibold uppercase tracking-wider text-xs">Critical Sequence:</span>
+            <span className="text-white font-bold text-lg">{criticalPath.criticalPathTaskIds.length} Tasks</span>
           </div>
+          <div className="h-4 w-px bg-zinc-800"></div>
           <div className="flex items-center gap-2">
-            <Play className="w-4 h-4 text-blue-400" />
-            <span className="text-zinc-400">Project Duration:</span>
-            <span className="text-white font-semibold">
-              {criticalPath.projectDuration} Hours
-            </span>
+            <Play className="w-5 h-5 text-blue-500" />
+            <span className="text-zinc-400 font-semibold uppercase tracking-wider text-xs">Project Duration:</span>
+            <span className="text-white font-bold text-lg">{criticalPath.projectDuration} Hours</span>
           </div>
+          <div className="h-4 w-px bg-zinc-800"></div>
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
-            <span className="text-zinc-400">Bottleneck Tasks:</span>
-            <span className="text-red-400 font-bold">
-              {criticalPath.tasks
-                .filter((t) => t.isCritical)
-                .map((t) => t.taskKey)
-                .join(', ') || 'None'}
+            <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]"></span>
+            <span className="text-zinc-400 font-semibold uppercase tracking-wider text-xs">Bottleneck Tasks:</span>
+            <span className="text-red-400 font-black tracking-widest text-lg">
+              {criticalPath.tasks.filter((t) => t.isCritical).map((t) => t.taskKey).join(', ') || 'NONE'}
             </span>
           </div>
         </div>
       )}
 
-      {/* Graph Visual Canvas */}
-      <div className="flex-1 w-full bg-zinc-950 border border-zinc-800/60 rounded-xl overflow-hidden relative shadow-inner">
-        {loadingGraph || loadingPath ? (
-          <div className="absolute inset-0 flex items-center justify-center text-zinc-500">
-            Mapping dependency network...
-          </div>
-        ) : graphError ? (
-          <div className="p-6">
-            <div className="bg-red-500/10 border border-red-500/30 text-red-200 p-4 rounded-xl flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-bold text-white mb-0.5">Connection Error</h3>
-                <p className="text-sm">
-                  Failed to connect to the backend Neo4j replication mapping. Make sure
-                  the backend application is running.
-                </p>
+      {/* Graph Visual Canvas & Side Panel Container */}
+      <div className="flex-1 w-full flex relative overflow-hidden bg-[#0a0a0a] border border-zinc-800/80 rounded-xl shadow-2xl">
+        
+        {/* Main Graph Area */}
+        <div className={`flex-1 relative transition-all duration-300 ${selectedNodeData ? 'mr-96' : ''}`}>
+          {loadingGraph || loadingPath ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : graphError ? (
+            <div className="p-8">
+              <div className="bg-red-500/10 border border-red-500/30 p-6 rounded-xl flex items-start gap-4">
+                <AlertCircle className="h-6 w-6 text-red-500 shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-1">Connection Error</h3>
+                  <p className="text-red-200">Failed to connect to the Neo4j intelligence layer.</p>
+                </div>
               </div>
             </div>
-          </div>
-        ) : !nodes || nodes.length === 0 ? (
-          <div className="absolute inset-0 flex items-center justify-center text-zinc-500">
-            No tasks or relationships exist for project ({selectedProjectCode}). Use Sprints or Tasks tabs to seed data.
-          </div>
-        ) : (
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            fitView
-            minZoom={0.2}
-            maxZoom={1.5}
-          >
-            <Background color="#3f3f46" gap={16} size={1} />
-            <Controls className="bg-zinc-900 border border-zinc-800 rounded-lg text-white" />
-            <MiniMap
-              nodeColor={(n) => {
-                const isCritical = criticalPath?.criticalPathTaskIds?.includes(n.id);
-                return isCritical ? '#ef4444' : '#1e293b';
-              }}
-              maskColor="rgba(0,0,0,0.6)"
-              style={{ background: '#09090b', border: '1px solid #27272a' }}
-            />
-          </ReactFlow>
-        )}
+          ) : !nodes || nodes.length === 0 ? (
+            <div className="absolute inset-0 flex items-center justify-center text-zinc-500 font-bold tracking-widest uppercase">
+              No tasks or relationships found
+            </div>
+          ) : (
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onNodeClick={onNodeClick}
+              fitView
+              minZoom={0.1}
+              maxZoom={1.5}
+            >
+              <Background color="#27272a" gap={20} size={1} />
+              <Controls className="bg-[#131720] border border-zinc-800 rounded-lg text-white shadow-xl" />
+            </ReactFlow>
+          )}
+        </div>
+
+        {/* Side Detail Panel */}
+        <div 
+          className={`absolute top-0 right-0 h-full w-96 bg-[#131720] border-l border-zinc-800/80 shadow-2xl transform transition-transform duration-300 z-10 flex flex-col ${
+            selectedNodeData ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          {selectedNodeData && (
+            <>
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between p-6 border-b border-zinc-800/50">
+                <div className="flex items-center gap-3">
+                  <h3 className="font-mono text-sm font-bold text-zinc-400 uppercase tracking-widest">{selectedNodeData.taskKey}</h3>
+                  {selectedNodeData.isCritical && (
+                    <span className="px-2 py-0.5 bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-black uppercase tracking-widest rounded-sm">
+                      Critical Path
+                    </span>
+                  )}
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setSelectedNodeData(null)} className="h-8 w-8 text-zinc-400 hover:text-white">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Drawer Body */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                
+                <div>
+                  <h2 className="text-xl font-bold text-white leading-tight mb-4">{selectedNodeData.label}</h2>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2.5 py-1 rounded-sm font-bold text-xs uppercase tracking-wider ${
+                      selectedNodeData.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-400' : 
+                      selectedNodeData.status === 'IN_PROGRESS' ? 'bg-blue-500/10 text-blue-400' :
+                      selectedNodeData.status === 'BLOCKED' ? 'bg-red-500/10 text-red-500' :
+                      'bg-zinc-800 text-zinc-400'
+                    }`}>
+                      {selectedNodeData.status || 'TODO'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-[#0B0E14] border border-zinc-800/50 p-4 rounded-xl">
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5 mb-1"><Clock className="w-3 h-3" /> Est. Hours</span>
+                    <span className="text-xl font-black text-white">{selectedNodeData.estimatedHours || 0}</span>
+                  </div>
+                  <div className="bg-[#0B0E14] border border-zinc-800/50 p-4 rounded-xl">
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5 mb-1"><BarChart4 className="w-3 h-3" /> Story Points</span>
+                    <span className="text-xl font-black text-white">{selectedNodeData.storyPoints || 0}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Health Impact</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-zinc-300 font-medium">Schedule Risk</span>
+                      <span className={selectedNodeData.status === 'BLOCKED' ? 'text-red-400 font-bold' : 'text-emerald-400 font-bold'}>
+                        {selectedNodeData.status === 'BLOCKED' ? 'High' : 'Low'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-zinc-300 font-medium">Downstream Impact</span>
+                      <span className="text-amber-400 font-bold">
+                        Medium
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedNodeData.isCritical && selectedNodeData.status === 'BLOCKED' && (
+                  <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl mt-8">
+                    <div className="flex items-center gap-2 text-red-400 mb-2">
+                      <ShieldAlert className="w-4 h-4" />
+                      <span className="text-xs font-bold uppercase tracking-widest">Active Blocker</span>
+                    </div>
+                    <p className="text-sm text-red-200/80 leading-relaxed">
+                      This task is actively blocking the critical path. Every hour this remains blocked translates to a 1:1 delay in the final project delivery date.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
       </div>
     </div>
   );

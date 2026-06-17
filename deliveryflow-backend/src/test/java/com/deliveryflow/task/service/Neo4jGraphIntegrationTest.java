@@ -5,10 +5,8 @@ import com.deliveryflow.common.enums.ProjectStatus;
 import com.deliveryflow.project.entity.Project;
 import com.deliveryflow.project.repository.ProjectRepository;
 import com.deliveryflow.task.dto.CreateTaskRequest;
-import com.deliveryflow.task.entity.Task;
 import com.deliveryflow.task.graph.entity.TaskNode;
 import com.deliveryflow.task.graph.repository.TaskNodeRepository;
-import com.deliveryflow.task.repository.TaskDependencyRepository;
 import com.deliveryflow.task.repository.TaskRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,9 +31,6 @@ public class Neo4jGraphIntegrationTest {
 
     @Autowired
     private TaskRepository taskRepository;
-
-    @Autowired
-    private TaskDependencyRepository taskDependencyRepository;
 
     @Autowired
     private ProjectRepository projectRepository;
